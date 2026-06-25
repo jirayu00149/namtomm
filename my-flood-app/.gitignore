@@ -43,3 +43,7 @@ next-env.d.ts
 
 # supabase local cache
 supabase/.temp/
+
+# cloudflare build output
+.open-next/
+.wrangler/

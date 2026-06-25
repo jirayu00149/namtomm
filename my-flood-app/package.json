@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "supabase db push",
-    "db:advisors": "supabase db advisors"
+    "db:advisors": "supabase db advisors",
+    "preview": "node scripts/cloudflare.mjs preview",
+    "deploy": "node scripts/cloudflare.mjs deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf:build": "node scripts/cloudflare.mjs build"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.108.2",
@@ -18,14 +22,17 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "rclone.js": "0.6.6",
     "supabase": "2.108.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "4.105.0"
   }
 }

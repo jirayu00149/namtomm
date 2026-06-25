@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "namtom-dash",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-06-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "SUPABASE_URL": "https://oporpiczoftpbtelssze.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://oporpiczoftpbtelssze.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_orV9VpQp0AFNfpzCoQA4HQ_1QA8yOo4",
+    "NEXT_PUBLIC_YOLO_STATUS": "Ready for YOLO API results"
+  }
+}
