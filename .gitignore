@@ -1,0 +1,12 @@
+.venv/
+uploaded_images/
+__pycache__/
+*.pyc
+.env*
+
+my-flood-app/node_modules/
+my-flood-app/.next/
+my-flood-app/out/
+my-flood-app/build/
+my-flood-app/.env*
+!my-flood-app/.env.example
