@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { analyzeWaterLevelWithYolo } from "@/lib/ai/yolo-water-level";
+import { validateFloodReport } from "@/lib/ai/report-validation";
 import {
   clearFloodReports,
   createFloodReport,
@@ -71,6 +72,8 @@ export async function POST(request: NextRequest) {
     const image = formData.get("image");
     const lat = parseNumber(formData.get("lat"));
     const lng = parseNumber(formData.get("lng"));
+    const locationAccuracyM = parseNumber(formData.get("locationAccuracyM"));
+    const locationSource = getText(formData.get("locationSource"), "unknown");
 
     if (!(image instanceof File) || image.size === 0) {
       return json({ ok: false, message: "Image is required." }, { status: 400 });
@@ -81,6 +84,12 @@ export async function POST(request: NextRequest) {
     }
 
     const yolo = await analyzeWaterLevelWithYolo(image);
+    const validation = validateFloodReport({ yolo, lat, lng, locationSource, locationAccuracyM });
+
+    if (validation.verdict === "rejected") {
+      return json({ ok: false, rejected: true, yolo, validation, message: validation.reason }, { status: 422 });
+    }
+
     const result = await createFloodReport({
       image,
       lat,
@@ -103,7 +112,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return json({ ok: true, configured: true, report: result.report, yolo }, { status: 201 });
+    return json({ ok: true, configured: true, report: result.report, yolo, validation }, { status: 201 });
   } catch (error) {
     return json(
       {

@@ -9,6 +9,7 @@ import {
   Database,
   Drone,
   Eye,
+  ExternalLink,
   ImageIcon,
   MapPin,
   Navigation,
@@ -54,6 +55,19 @@ type ReportsResponse = {
   configured?: boolean;
   reports?: FloodReport[];
   message?: string;
+};
+
+type DashboardStats = {
+  userCount: number | null;
+  reportCount: number;
+  droneCount: number;
+  missionCount: number;
+  waterEventCount: number;
+};
+
+type DashboardStatsResponse = {
+  ok: boolean;
+  stats?: DashboardStats;
 };
 
 type DroneRecord = {
@@ -206,6 +220,8 @@ export function FloodDashboard({ activeView = "overview" }: FloodDashboardProps)
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -227,6 +243,11 @@ export function FloodDashboard({ activeView = "overview" }: FloodDashboardProps)
 
         setReports(payload.reports || []);
         setConfigured(Boolean(payload.configured));
+
+        const statsResponse = await fetch("/api/dashboard/stats", { cache: "no-store", signal: controller.signal });
+        const statsPayload = (await statsResponse.json()) as DashboardStatsResponse;
+        if (statsResponse.ok && statsPayload.ok) setStats(statsPayload.stats || null);
+        setLastUpdatedAt(new Date().toISOString());
       } catch (loadError) {
         if (controller.signal.aborted) {
           return;
@@ -252,12 +273,13 @@ export function FloodDashboard({ activeView = "overview" }: FloodDashboardProps)
     const assigned = reports.filter((report) => report.status === "assigned").length;
 
     return [
+      { label: "Real users", value: stats?.userCount ?? 0, unit: "users", icon: Users, className: "bg-cyan-50 text-cyan-700" },
       { label: "User reports", value: reports.length, unit: "items", icon: Users, className: "bg-blue-50 text-blue-700" },
       { label: "Stored images", value: withImages, unit: "files", icon: ImageIcon, className: "bg-emerald-50 text-emerald-700" },
       { label: "YOLO danger", value: critical, unit: "points", icon: AlertTriangle, className: "bg-rose-50 text-rose-700" },
       { label: "Assigned cases", value: assigned, unit: "cases", icon: Truck, className: "bg-amber-50 text-amber-700" },
     ];
-  }, [reports]);
+  }, [reports, stats]);
 
   const activeQueue = reports.filter((report) => report.priority !== "normal").slice(0, 5);
   const latestReport = reports[0];
@@ -272,6 +294,7 @@ export function FloodDashboard({ activeView = "overview" }: FloodDashboardProps)
             error={error}
             latestReport={latestReport}
             loading={loading}
+            lastUpdatedAt={lastUpdatedAt}
             reports={reports}
             summary={summary}
           />
@@ -297,6 +320,7 @@ function OverviewView({
   error,
   latestReport,
   loading,
+  lastUpdatedAt,
   reports,
   summary,
 }: {
@@ -305,6 +329,7 @@ function OverviewView({
   error: string | null;
   latestReport: FloodReport | undefined;
   loading: boolean;
+  lastUpdatedAt: string | null;
   reports: FloodReport[];
   summary: Array<{ label: string; value: number; unit: string; icon: typeof Users; className: string }>;
 }) {
@@ -331,6 +356,7 @@ function OverviewView({
           >
             {configured ? <ShieldCheck className="h-4 w-4" /> : <Database className="h-4 w-4" />}
             {configured ? "Supabase connected" : "Supabase env required"}
+            {lastUpdatedAt ? <span className="text-xs font-normal opacity-75">Synced {formatDate(lastUpdatedAt)}</span> : null}
           </div>
         </div>
       </section>
@@ -581,6 +607,8 @@ function DronesView() {
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -605,6 +633,11 @@ function DronesView() {
         setCaptures(payload.captures || []);
         setWaterEvents(payload.waterEvents || []);
         setConfigured(Boolean(payload.configured));
+
+        const statsResponse = await fetch("/api/dashboard/stats", { cache: "no-store", signal: controller.signal });
+        const statsPayload = (await statsResponse.json()) as DashboardStatsResponse;
+        if (statsResponse.ok && statsPayload.ok) setStats(statsPayload.stats || null);
+        setLastUpdatedAt(new Date().toISOString());
       } catch (loadError) {
         if (controller.signal.aborted) {
           return;
@@ -665,6 +698,20 @@ function DronesView() {
       </section>
 
       <SummaryGrid summary={droneStats} />
+
+      <section className="overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-slate-800 p-4 text-white sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold">Legacy drone2 control room</h2>
+            <p className="mt-1 text-sm text-slate-300">Embedded from the previous drone web app and kept connected with the new flood dashboard.</p>
+          </div>
+          <a className="inline-flex w-fit items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-slate-100" href="https://autokgapai-drone.pages.dev/" target="_blank" rel="noreferrer">
+            <ExternalLink className="h-4 w-4" />
+            Open full screen
+          </a>
+        </div>
+        <iframe title="Legacy drone2 control room" src="https://autokgapai-drone.pages.dev/" className="h-[720px] w-full border-0 bg-slate-950" />
+      </section>
 
       {error ? <div className="rounded-lg border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 

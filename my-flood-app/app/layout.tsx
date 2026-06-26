@@ -13,10 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FloodAI Dashboard",
-  description: "ระบบติดตามสถานการณ์น้ำและคำขอช่วยเหลือ",
+  title: "rodnam Dashboard",
+  description: "Flood relief command dashboard for reports, drone missions and YOLO water-level events.",
+  icons: {
+    icon: "/rodnam-logo.svg",
+  },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{

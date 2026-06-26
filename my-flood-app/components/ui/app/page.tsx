@@ -5,7 +5,6 @@ import {
   Activity,
   Bell,
   Drone,
-  LifeBuoy,
   Menu,
   Radio,
   Settings,
@@ -44,15 +43,9 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => selectView("overview")}
-            className="flex items-center gap-3 text-left"
+            className="flex min-w-0 items-center gap-3 text-left"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white">
-              <LifeBuoy className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-lg font-bold leading-tight sm:text-xl">Thai Flood Relief</span>
-              <span className="block text-xs text-blue-100">Admin Dashboard</span>
-            </span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/20 bg-white shadow-sm"><img src="/rodnam-logo.svg" alt="Rodnam" className="h-full w-full object-contain p-0.5" /></span><span className="min-w-0"><span className="block truncate text-lg font-bold leading-tight sm:text-xl">rodnam</span><span className="block text-xs text-blue-100">Admin Dashboard</span></span>
           </button>
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Dashboard sections">
