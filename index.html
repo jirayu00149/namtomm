@@ -394,7 +394,7 @@
         <div class="brand-subtitle">แพลตฟอร์มรายงานน้ำท่วมและประสานงานช่วยเหลือ</div>
       </div>
     </div>
-    <div class="online-pill"><i class="fa-solid fa-signal"></i> ผู้ใช้งานออนไลน์ 124 คน</div>
+    <div class="online-pill"><i class="fa-solid fa-signal"></i> ผู้ใช้งานออนไลน์ <span id="onlineUserCount">-</span> คน</div>
   </header>
 
   <main class="main-container">
@@ -460,6 +460,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const API_URL = new URLSearchParams(window.location.search).get('api') || 'https://namtom-dash.kungmaxzaa.workers.dev/api/reports';
+    const STATS_URL = API_URL.replace(/\/api\/reports$/, '/api/dashboard/stats');
     const DEFAULT_LOCATION = { lat: 13.7563, lng: 100.5018 };
 
     const map = L.map('map', { zoomControl: true }).setView([DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng], 10);
@@ -467,9 +468,37 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    function getRodnamUserId() {
+      try {
+        const existingId = window.localStorage.getItem('rodnamUserId');
+        if (existingId) return existingId;
+        const nextId = window.crypto && window.crypto.randomUUID
+          ? window.crypto.randomUUID()
+          : `web-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        window.localStorage.setItem('rodnamUserId', nextId);
+        return nextId;
+      } catch {
+        return `web-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+    }
+
+    async function loadOnlineUserCount() {
+      const target = document.getElementById('onlineUserCount');
+      if (!target) return;
+
+      try {
+        const response = await fetch(STATS_URL, { cache: 'no-store' });
+        const payload = await readJson(response);
+        const userCount = payload && payload.stats ? payload.stats.userCount : null;
+        target.innerText = typeof userCount === 'number' ? String(userCount) : '-';
+      } catch {
+        target.innerText = '-';
+      }
+    }
     let userLat = DEFAULT_LOCATION.lat;
     let userLng = DEFAULT_LOCATION.lng;
     let userMarker = null;
+    loadOnlineUserCount();
 
     function setUserLocation(lat, lng, popupText) {
       userLat = lat;
@@ -563,6 +592,7 @@
       formData.append('lat', String(userLat));
       formData.append('lng', String(userLng));
       formData.append('details', detailsInput.value || '');
+      formData.append('userId', getRodnamUserId());
       formData.append('reporterName', 'ผู้ใช้หน้า User');
 
       setSubmitting(true);
