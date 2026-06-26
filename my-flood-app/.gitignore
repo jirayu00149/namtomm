@@ -47,3 +47,6 @@ supabase/.temp/
 # cloudflare build output
 .open-next/
 .wrangler/
+
+# local YOLO model weights
+tools/yolo-water-service/models/*.pt

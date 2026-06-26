@@ -41,7 +41,7 @@ Keep `SUPABASE_SERVICE_ROLE_KEY` server-side only. Do not expose it as `NEXT_PUB
 Set:
 
 ```txt
-YOLO_API_URL=https://your-yolo-service.example.com/detect-water-level
+YOLO_API_URL=http://127.0.0.1:8010/detect-water-level
 YOLO_API_KEY=optional
 ```
 
@@ -116,7 +116,35 @@ curl -X DELETE http://127.0.0.1:3000/api/reports \
   -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
-## 5. Verify before push
+
+## 5. YOLO Water-Level Service
+
+A local FastAPI service is included at `tools/yolo-water-service`. It receives the user-submitted report image, runs an Ultralytics YOLO flood-water model, estimates the waterline, and returns `depthCm` / `water_level_cm` to `/api/reports`.
+
+```powershell
+npm run yolo:install
+npm run yolo:service
+```
+
+Place the trained model at:
+
+```text
+tools/yolo-water-service/models/flood_water_level.pt
+```
+
+The report API stores the returned values in `public.flood_reports.yolo_depth_cm`, `yolo_risk`, `yolo_confidence`, and `yolo_labels`. The dashboard reads those values and shows the AI water-level result for each user photo.
+
+For real centimeter measurements, calibrate the camera/reference span:
+
+```env
+WATER_REFERENCE_HEIGHT_CM=200
+WATER_REFERENCE_TOP_Y=0
+WATER_REFERENCE_BOTTOM_Y=720
+```
+
+If you deploy the YOLO service to another machine, set `YOLO_API_URL` to that public HTTPS endpoint and upload the same value as a Cloudflare Worker secret.
+
+## 6. Verify before push
 
 ```bash
 npm run lint

@@ -12,7 +12,9 @@
     "preview": "node scripts/cloudflare.mjs preview",
     "deploy": "node scripts/cloudflare.mjs deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "cf:build": "node scripts/cloudflare.mjs build"
+    "cf:build": "node scripts/cloudflare.mjs build",
+    "yolo:install": "python -m pip install -r tools/yolo-water-service/requirements.txt",
+    "yolo:service": "python tools/yolo-water-service/server.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.108.2",
