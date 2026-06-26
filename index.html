@@ -1,163 +1,602 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flood Relief - แพลตฟอร์มช่วยเหลือผู้ประสบภัยน้ำท่วม</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        body { font-family: 'Sarabun', sans-serif; margin: 0; background-color: #f4f7f6; display: flex; height: 100vh; flex-direction: column; }
-        .navbar { background: #1a365d; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        
-        /* ส่วนแผนที่ */
-        .map-section { flex: 2; height: 100%; position: relative; }
-        #map { width: 100%; height: 100%; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rodnam Flood Relief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --ink: #123047;
+      --muted: #64748b;
+      --brand: #0575b8;
+      --brand-deep: #075985;
+      --aqua: #38bdf8;
+      --teal: #56bba8;
+      --surface: #ffffff;
+      --line: #dbeafe;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
 
-        /* ส่วนรายงานและขอความช่วยเหลือ */
-        .report-section { flex: 1; background: white; padding: 20px; overflow-y: auto; box-shadow: -4px 0 15px rgba(0,0,0,0.05); z-index: 1000; min-width: 350px; }
-        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .btn-sos { background: #e53e3e; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px;}
-        .btn-sos:hover { background: #c53030; }
-        .btn-report { background: #3182ce; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-        
-        input[type="text"], select { width: 100%; padding: 10px; margin: 8px 0 15px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; }
-        .file-drop { border: 2px dashed #a0aec0; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; background: white; }
-        .submit-status { display: none; margin-top: 15px; border-radius: 10px; padding: 14px; border: 1px solid transparent; align-items: flex-start; gap: 12px; }
-        .submit-status.show { display: flex; }
-        .submit-status.loading { background: #ebf8ff; border-color: #bee3f8; color: #2b6cb0; }
-        .submit-status.success { background: #f0fff4; border-color: #9ae6b4; color: #276749; }
-        .status-title { font-weight: 700; margin-bottom: 4px; }
-        .status-message { font-size: 14px; line-height: 1.5; }
-        .status-spinner { width: 20px; height: 20px; border: 3px solid #bee3f8; border-top-color: #3182ce; border-radius: 999px; animation: spin 0.8s linear infinite; flex: 0 0 auto; margin-top: 2px; }
-        .status-check { width: 22px; height: 22px; border-radius: 999px; background: #38a169; color: white; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; margin-top: 1px; font-size: 13px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Sarabun', system-ui, sans-serif;
+      color: var(--ink);
+      background: #f5f8fb;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      min-height: 76px;
+      padding: 12px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+      z-index: 1200;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: clamp(20px, 3vw, 28px);
+      line-height: 1.1;
+      color: var(--brand-deep);
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-subtitle {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .online-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 999px;
+      background: #ecfeff;
+      color: #0e7490;
+      border: 1px solid #a5f3fc;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .main-container {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, 430px);
+      flex: 1;
+      min-height: 0;
+    }
+
+    .map-section {
+      min-height: 520px;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      min-height: 520px;
+      z-index: 1;
+    }
+
+    .map-badge {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 500;
+      max-width: min(430px, calc(100% - 40px));
+      padding: 14px 16px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid #dbeafe;
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+    }
+
+    .map-badge strong {
+      display: block;
+      color: var(--brand-deep);
+      font-size: 16px;
+      margin-bottom: 3px;
+    }
+
+    .map-badge span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .report-section {
+      background: #ffffff;
+      padding: 22px;
+      overflow-y: auto;
+      border-left: 1px solid #e2e8f0;
+      box-shadow: -10px 0 30px rgba(15, 23, 42, 0.05);
+      z-index: 1000;
+    }
+
+    .logo-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      margin-bottom: 18px;
+      border: 1px solid #dbeafe;
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+      border-radius: 8px;
+    }
+
+    .logo-panel img {
+      width: min(230px, 72vw);
+      height: auto;
+      display: block;
+    }
+
+    .btn-sos,
+    .btn-report {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      font-family: inherit;
+      font-weight: 800;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .btn-sos {
+      background: #dc2626;
+      color: white;
+      padding: 15px;
+      font-size: 17px;
+      margin-bottom: 18px;
+      box-shadow: 0 10px 22px rgba(220, 38, 38, 0.18);
+    }
+
+    .btn-report {
+      background: var(--brand);
+      color: white;
+      padding: 13px;
+      font-size: 16px;
+      margin-top: 16px;
+      box-shadow: 0 10px 22px rgba(5, 117, 184, 0.16);
+    }
+
+    .btn-sos:hover,
+    .btn-report:hover { transform: translateY(-1px); }
+    .btn-sos:hover { background: #b91c1c; }
+    .btn-report:hover { background: #0369a1; }
+    .btn-report:disabled { cursor: wait; opacity: 0.7; transform: none; }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .card h3 {
+      margin: 0 0 16px;
+      color: var(--brand-deep);
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 7px;
+      font-size: 14px;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    input[type='text'] {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      color: var(--ink);
+      background: #ffffff;
+    }
+
+    input[readonly] { background: #f8fafc; color: #475569; }
+
+    .file-drop {
+      border: 2px dashed #93c5fd;
+      padding: 22px 16px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #ffffff;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .file-drop:hover {
+      border-color: var(--brand);
+      background: #eff6ff;
+    }
+
+    .file-drop i {
+      color: #0ea5e9;
+      margin-bottom: 10px;
+    }
+
+    .file-drop p {
+      margin: 0;
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .submit-status {
+      display: none;
+      margin-top: 16px;
+      border-radius: 8px;
+      padding: 16px;
+      align-items: flex-start;
+      gap: 14px;
+      border: 1px solid transparent;
+    }
+
+    .submit-status.show { display: flex; }
+    .submit-status.loading { background: #eff8ff; border-color: #bae6fd; color: #075985; }
+    .submit-status.error { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+
+    .status-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .status-message {
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .status-spinner {
+      width: 27px;
+      height: 27px;
+      border: 3px solid #bae6fd;
+      border-top-color: #0ea5e9;
+      border-radius: 999px;
+      animation: spin 0.8s linear infinite;
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+
+    .status-error {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      background: #e11d48;
+      flex: 0 0 auto;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.82);
+      z-index: 3000;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .success-modal {
+      width: min(450px, 100%);
+      padding: 30px;
+      border-radius: 8px;
+      border: 1px solid #27272a;
+      background: #09090b;
+      color: #f4f4f5;
+      text-align: center;
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.42);
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 24px;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: #16a34a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .success-modal h2 {
+      margin: 0 0 14px;
+      font-size: 23px;
+      line-height: 1.3;
+    }
+
+    .success-modal p {
+      margin: 0 auto 24px;
+      max-width: 350px;
+      color: #a1a1aa;
+      line-height: 1.55;
+      font-size: 16px;
+    }
+
+    .modal-button {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      background: #2563eb;
+      color: #0b1220;
+      padding: 13px 18px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+      body { min-height: 100dvh; }
+      .navbar { align-items: flex-start; flex-direction: column; }
+      .main-container { grid-template-columns: 1fr; }
+      .map-section, #map { min-height: 380px; }
+      .report-section { border-left: 0; border-top: 1px solid #e2e8f0; }
+      .online-pill { white-space: normal; }
+    }
+  </style>
 </head>
 <body>
-
-    <div class="navbar">
-        <h2><i class="fa-solid fa-life-ring"></i> Thai Flood Relief</h2>
-        <div>ผู้ใช้งานออนไลน์: 124 คน</div>
+  <header class="navbar">
+    <div class="brand">
+      <img class="brand-logo" src="assets/rodnam-logo.svg" alt="Rodnam logo" />
+      <div>
+        <h1 class="brand-title">Rodnam Flood Relief</h1>
+        <div class="brand-subtitle">แพลตฟอร์มรายงานน้ำท่วมและประสานงานช่วยเหลือ</div>
+      </div>
     </div>
+    <div class="online-pill"><i class="fa-solid fa-signal"></i> ผู้ใช้งานออนไลน์ 124 คน</div>
+  </header>
 
-    <div class="main-container">
-        <div class="map-section">
-            <div id="map"></div>
+  <main class="main-container">
+    <section class="map-section" aria-label="แผนที่รายงานน้ำท่วม">
+      <div id="map"></div>
+      <div class="map-badge">
+        <strong>แผนที่สถานการณ์น้ำท่วม</strong>
+        <span>ส่งรูปภาพพร้อมพิกัดเพื่อให้ระบบ YOLO วิเคราะห์ระดับน้ำและบันทึกลงฐานข้อมูลกลาง</span>
+      </div>
+    </section>
+
+    <aside class="report-section" aria-label="ฟอร์มรายงานน้ำท่วม">
+      <div class="logo-panel">
+        <img src="assets/rodnam-logo.svg" alt="Rodnam Flood Relief and Recovery" />
+      </div>
+
+      <button class="btn-sos" type="button">
+        <i class="fa-solid fa-truck-medical"></i>
+        ขอความช่วยเหลือฉุกเฉิน
+      </button>
+
+      <section class="card">
+        <h3>รายงานระดับน้ำด้วย AI</h3>
+
+        <label for="locationInput">พิกัดของคุณ (GPS)</label>
+        <input type="text" id="locationInput" placeholder="กำลังดึงตำแหน่งพิกัด..." readonly />
+
+        <label>รูปภาพน้ำท่วม</label>
+        <div class="file-drop" onclick="document.getElementById('fileInput').click()" role="button" tabindex="0">
+          <i class="fa-solid fa-camera fa-2x"></i>
+          <p id="fileName">คลิกเพื่ออัปโหลดรูปภาพน้ำท่วม</p>
+          <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileName(this)" />
         </div>
 
-        <div class="report-section">
-            <button class="btn-sos"><i class="fa-solid fa-truck-medical"></i> ขอความช่วยเหลือฉุกเฉิน</button>
+        <label for="detailsInput">รายละเอียดเพิ่มเติม</label>
+        <input type="text" id="detailsInput" placeholder="เช่น ถนนตัดขาด มีคนติดอยู่ในบ้าน หรือระดับน้ำเพิ่มเร็ว" />
 
-            <div class="card">
-                <h3>รายงานระดับน้ำด้วย AI</h3>
-                <label>พิกัดของคุณ (GPS):</label>
-                <input type="text" id="locationInput" placeholder="กำลังดึงตำแหน่งพิกัด..." readonly>
-                
-                <div class="file-drop" onclick="document.getElementById('fileInput').click()">
-                    <i class="fa-solid fa-camera fa-2x" style="color:#718096; margin-bottom:10px;"></i>
-                    <p id="fileName">คลิกเพื่ออัปโหลดรูปภาพน้ำท่วม</p>
-                    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="document.getElementById('fileName').innerText = this.files[0].name;">
-                </div>
+        <button id="submitButton" class="btn-report" type="button" onclick="submitReport()">
+          <i class="fa-solid fa-paper-plane"></i>
+          ส่งรายงานและประเมิน AI
+        </button>
 
-                <label style="display:block; margin-top:15px;">รายละเอียดเพิ่มเติม:</label>
-                <input type="text" id="detailsInput" placeholder="เช่น ถนนตัดขาด, มีคนติดอยู่ในบ้าน...">
-
-                <button class="btn-report" style="margin-top: 15px;" onclick="submitReport()">ส่งรายงาน & ประเมิน AI</button>
-                <div id="submitStatus" class="submit-status" role="status" aria-live="polite">
-                    <div id="statusIcon" class="status-spinner"></div>
-                    <div>
-                        <div id="statusTitle" class="status-title">กำลังส่งรายงาน</div>
-                        <div id="statusMessage" class="status-message">กำลังส่งภาพไปให้ AI วิเคราะห์ และปักหมุดลงบนแผนที่รวม...</div>
-                    </div>
-                </div>
-            </div>
+        <div id="submitStatus" class="submit-status" role="status" aria-live="polite">
+          <div id="statusIcon" class="status-spinner"></div>
+          <div>
+            <div id="statusTitle" class="status-title">กำลังส่งรายงาน</div>
+            <div id="statusMessage" class="status-message">กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...</div>
+          </div>
         </div>
+      </section>
+    </aside>
+  </main>
+
+  <div id="successModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <div class="success-modal">
+      <div class="modal-icon"><i class="fa-solid fa-check-circle"></i></div>
+      <h2 id="successTitle">ส่งรายงานสำเร็จ</h2>
+      <p id="successMessage">บันทึกรูปภาพ พิกัด และผลวิเคราะห์ระดับน้ำลงฐานข้อมูลแล้ว</p>
+      <button class="modal-button" type="button" onclick="closeSuccessModal()">Okay</button>
     </div>
+  </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // 1. สร้างแผนที่และตั้งค่าเริ่มต้น
-        const map = L.map('map').setView([13.7563, 100.5018], 10); // ซูมที่กรุงเทพ/ประเทศไทย
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const API_URL = new URLSearchParams(window.location.search).get('api') || 'https://namtom-dash.kungmaxzaa.workers.dev/api/reports';
+    const DEFAULT_LOCATION = { lat: 13.7563, lng: 100.5018 };
 
-        // 2. ขอสิทธิ์เข้าถึง GPS ของผู้ใช้เพื่อกรอกพิกัดอัตโนมัติ
-        let userLat, userLng;
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                userLat = position.coords.latitude;
-                userLng = position.coords.longitude;
-                document.getElementById('locationInput').value = `${userLat.toFixed(5)}, ${userLng.toFixed(5)}`;
-                
-                // เลื่อนแผนที่ไปหาผู้ใช้และปักหมุดตำแหน่งปัจจุบัน
-                map.setView([userLat, userLng], 14);
-                L.marker([userLat, userLng]).addTo(map).bindPopup("ตำแหน่งของคุณ").openPopup();
-            });
+    const map = L.map('map', { zoomControl: true }).setView([DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let userLat = DEFAULT_LOCATION.lat;
+    let userLng = DEFAULT_LOCATION.lng;
+    let userMarker = null;
+
+    function setUserLocation(lat, lng, popupText) {
+      userLat = lat;
+      userLng = lng;
+      document.getElementById('locationInput').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      map.setView([lat, lng], 14);
+
+      if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+      } else {
+        userMarker = L.marker([lat, lng]).addTo(map);
+      }
+      userMarker.bindPopup(popupText).openPopup();
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setUserLocation(position.coords.latitude, position.coords.longitude, 'ตำแหน่งของคุณ'),
+        () => setUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng, 'ตำแหน่งเริ่มต้น')
+      );
+    } else {
+      setUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng, 'ตำแหน่งเริ่มต้น');
+    }
+
+    function handleFileName(input) {
+      const fileName = document.getElementById('fileName');
+      fileName.innerText = input.files && input.files[0] ? input.files[0].name : 'คลิกเพื่ออัปโหลดรูปภาพน้ำท่วม';
+    }
+
+    function showSubmitStatus(type, title, message) {
+      const status = document.getElementById('submitStatus');
+      const icon = document.getElementById('statusIcon');
+      const statusTitle = document.getElementById('statusTitle');
+      const statusMessage = document.getElementById('statusMessage');
+
+      status.className = `submit-status show ${type}`;
+      icon.className = type === 'error' ? 'status-error' : 'status-spinner';
+      icon.innerHTML = type === 'error' ? '<i class="fa-solid fa-exclamation"></i>' : '';
+      statusTitle.innerText = title;
+      statusMessage.innerText = message;
+    }
+
+    function setSubmitting(isSubmitting) {
+      const button = document.getElementById('submitButton');
+      button.disabled = isSubmitting;
+      button.innerHTML = isSubmitting
+        ? '<i class="fa-solid fa-spinner fa-spin"></i> กำลังส่งรายงาน'
+        : '<i class="fa-solid fa-paper-plane"></i> ส่งรายงานและประเมิน AI';
+    }
+
+    function showSuccessModal(title, message) {
+      document.getElementById('successTitle').innerText = title;
+      document.getElementById('successMessage').innerText = message;
+      document.getElementById('successModal').classList.add('show');
+    }
+
+    function closeSuccessModal() {
+      document.getElementById('successModal').classList.remove('show');
+    }
+
+    function friendlyError(message) {
+      if (!message) return 'ตรวจสอบการเชื่อมต่อ API, database และ YOLO service อีกครั้ง';
+      if (message.includes("Could not find the table")) {
+        return 'Remote database ยังไม่มีตารางที่ต้องใช้ กรุณารัน Supabase migration ก่อนส่งรายงานจริง';
+      }
+      return message;
+    }
+
+    async function readJson(response) {
+      const text = await response.text();
+      if (!text) return {};
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { ok: false, message: text };
+      }
+    }
+
+    async function submitReport() {
+      const fileInput = document.getElementById('fileInput');
+      const detailsInput = document.getElementById('detailsInput');
+      const image = fileInput.files && fileInput.files[0];
+
+      if (!image) {
+        showSubmitStatus('error', 'ยังไม่ได้เลือกรูปภาพ', 'กรุณาเลือกรูปน้ำท่วมก่อนส่งรายงาน');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', image);
+      formData.append('lat', String(userLat));
+      formData.append('lng', String(userLng));
+      formData.append('details', detailsInput.value || '');
+      formData.append('reporterName', 'ผู้ใช้หน้า User');
+
+      setSubmitting(true);
+      showSubmitStatus('loading', 'กำลังส่งรายงาน', 'กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...');
+
+      try {
+        const response = await fetch(API_URL, { method: 'POST', body: formData });
+        const payload = await readJson(response);
+
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || `ส่งรายงานไม่สำเร็จ (${response.status})`);
         }
 
-        // 3. จำลองการส่งข้อมูล
-        function showSubmitStatus(type, title, message) {
-            const status = document.getElementById('submitStatus');
-            const icon = document.getElementById('statusIcon');
-            const statusTitle = document.getElementById('statusTitle');
-            const statusMessage = document.getElementById('statusMessage');
+        const depth = payload.yolo && payload.yolo.depthCm !== null && payload.yolo.depthCm !== undefined ? `${payload.yolo.depthCm} ซม.` : '-';
+        const risk = payload.yolo && payload.yolo.risk ? payload.yolo.risk : 'pending';
 
-            status.className = `submit-status show ${type}`;
-            icon.className = type === 'success' ? 'status-check' : 'status-spinner';
-            icon.innerHTML = type === 'success' ? '<i class="fa-solid fa-check"></i>' : '';
-            statusTitle.innerText = title;
-            statusMessage.innerText = message;
-        }
+        L.circle([userLat + 0.001, userLng + 0.001], {
+          color: '#dc2626',
+          fillColor: '#f87171',
+          fillOpacity: 0.45,
+          radius: 120
+        }).addTo(map).bindPopup(`<b>ระดับน้ำ ${depth}</b><br>ประเมินโดย YOLO<br>สถานะ: ${risk}`).openPopup();
 
-        async function submitReport() {
-            const fileInput = document.getElementById('fileInput');
-            const detailsInput = document.getElementById('detailsInput');
-            const locationInput = document.getElementById('locationInput');
-            const image = fileInput.files && fileInput.files[0];
-
-            if (!image) {
-                showSubmitStatus('loading', 'ยังไม่ได้เลือกรูปภาพ', 'กรุณาเลือกรูปน้ำท่วมก่อนส่งรายงาน');
-                return;
-            }
-
-            const lat = userLat || 13.7563;
-            const lng = userLng || 100.5018;
-            locationInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-
-            const formData = new FormData();
-            formData.append('image', image);
-            formData.append('lat', String(lat));
-            formData.append('lng', String(lng));
-            formData.append('details', detailsInput ? detailsInput.value : '');
-            formData.append('reporterName', 'ผู้ใช้หน้า User');
-
-            showSubmitStatus('loading', 'กำลังส่งรายงาน', 'กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...');
-
-            try {
-                const response = await fetch('http://127.0.0.1:3000/api/reports', {
-                    method: 'POST',
-                    body: formData,
-                });
-                const payload = await response.json();
-
-                if (!response.ok || !payload.ok) {
-                    throw new Error(payload.message || 'ส่งรายงานไม่สำเร็จ');
-                }
-
-                L.circle([lat + 0.001, lng + 0.001], {
-                    color: 'red', fillColor: '#f03', fillOpacity: 0.5, radius: 100
-                }).addTo(map).bindPopup(`<b>ระดับน้ำ ${payload.yolo?.depthCm ?? '-'} ซม.</b><br>ประเมินโดย YOLO<br>สถานะ: ${payload.yolo?.risk ?? 'pending'}`).openPopup();
-
-                showSubmitStatus('success', 'ส่งรายงานสำเร็จ', 'บันทึกรูปภาพ พิกัด ผู้ใช้ และผล YOLO ลงฐานข้อมูลเรียบร้อย');
-            } catch (error) {
-                showSubmitStatus('loading', 'ส่งรายงานไม่สำเร็จ', error.message || 'ตรวจสอบการเชื่อมต่อ database และ YOLO API');
-            }
-        }
-    </script>
+        showSuccessModal('ส่งรายงานสำเร็จ', `ระบบบันทึกรูปภาพ พิกัด และผลวิเคราะห์ระดับน้ำเรียบร้อย สถานะล่าสุด: ${risk}`);
+        document.getElementById('submitStatus').className = 'submit-status';
+        fileInput.value = '';
+        handleFileName(fileInput);
+        detailsInput.value = '';
+      } catch (error) {
+        showSubmitStatus('error', 'ส่งรายงานไม่สำเร็จ', friendlyError(error.message));
+      } finally {
+        setSubmitting(false);
+      }
+    }
+  </script>
 </body>
 </html>
