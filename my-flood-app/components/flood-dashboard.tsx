@@ -8,7 +8,6 @@ import {
   Clock,
   Database,
   Drone,
-  Eye,
   ExternalLink,
   ImageIcon,
   MapPin,
@@ -197,6 +196,62 @@ function riskText(report: FloodReport) {
   return `YOLO ${report.depthCm} cm`;
 }
 
+function reportMapsHref(report: FloodReport | undefined) {
+  if (!report) {
+    return "https://www.google.com/maps";
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${report.lat},${report.lng}`;
+}
+
+function confidenceText(value: number | null) {
+  if (value === null) {
+    return "confidence pending";
+  }
+
+  return `${Math.round(value * 100)}% confidence`;
+}
+
+function aiReview(report: FloodReport) {
+  const labels = report.labels.join(" ").toLowerCase();
+  const floodEvidence =
+    report.risk === "danger" ||
+    report.risk === "watch" ||
+    (report.depthCm !== null && report.depthCm > 5) ||
+    /(flood|water|waterline|inundation|road_flood)/i.test(labels);
+  const lowEvidence =
+    report.risk === "safe" &&
+    (report.depthCm === 0 || /(dry|no[_ -]?flood|not[_ -]?flood|normal|safe)/i.test(labels) || report.labels.length > 0);
+
+  if (floodEvidence) {
+    return {
+      state: "detected" as const,
+      title: "Flood image detected",
+      detail: "AI found water evidence in the user photo.",
+      className: "border-rose-200 bg-rose-50 text-rose-700",
+      iconClassName: "bg-rose-100 text-rose-700",
+    };
+  }
+
+  if (lowEvidence) {
+    return {
+      state: "low_evidence" as const,
+      title: "Low flood evidence",
+      detail: "AI marked this user photo as safe or not flooded.",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      iconClassName: "bg-emerald-100 text-emerald-700",
+    };
+  }
+
+  return {
+    state: "review" as const,
+    title: "Needs human review",
+    detail: "YOLO is pending or not confident enough yet.",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+    iconClassName: "bg-amber-100 text-amber-700",
+  };
+}
+
 function EmptyState({
   icon: Icon,
   title,
@@ -263,8 +318,12 @@ export function FloodDashboard({ activeView = "overview" }: FloodDashboardProps)
     }
 
     loadReports();
+    const refreshTimer = window.setInterval(loadReports, 10000);
 
-    return () => controller.abort();
+    return () => {
+      window.clearInterval(refreshTimer);
+      controller.abort();
+    };
   }, []);
 
   const summary = useMemo(() => {
@@ -306,7 +365,7 @@ export function FloodDashboard({ activeView = "overview" }: FloodDashboardProps)
 
         {activeView === "drones" ? <DronesView /> : null}
 
-        {activeView === "ai" ? <AiView configured={configured} /> : null}
+        {activeView === "ai" ? <AiView configured={configured} reports={reports} /> : null}
 
         {activeView === "settings" ? <SettingsView configured={configured} /> : null}
       </div>
@@ -366,7 +425,7 @@ function OverviewView({
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.9fr)]">
         <MapPanel latestReport={latestReport} loading={loading} reports={reports} />
         <aside className="flex flex-col gap-4">
-          <AiCard />
+          <AiCard reports={reports} />
           <RescueQueue reports={activeQueue} />
         </aside>
       </section>
@@ -403,6 +462,8 @@ function SummaryGrid({ summary }: { summary: Array<{ label: string; value: numbe
 }
 
 function MapPanel({ latestReport, loading, reports }: { latestReport: FloodReport | undefined; loading: boolean; reports: FloodReport[] }) {
+  const mapsHref = reportMapsHref(latestReport);
+
   return (
     <div className="flex min-h-[560px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -410,10 +471,15 @@ function MapPanel({ latestReport, loading, reports }: { latestReport: FloodRepor
           <h2 className="text-lg font-bold">Live response map</h2>
           <p className="mt-1 text-sm text-slate-500">Map markers come from the database. No sample cases are rendered.</p>
         </div>
-        <button className="inline-flex w-fit items-center gap-2 rounded-lg bg-[#3182ce] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2b6cb0]">
-          <Eye className="h-4 w-4" />
-          View all reports
-        </button>
+        <a
+          className="inline-flex w-fit items-center gap-2 rounded-lg bg-[#3182ce] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2b6cb0]"
+          href={mapsHref}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <ExternalLink className="h-4 w-4" />
+          Open map
+        </a>
       </div>
 
       <div className="relative flex-1 overflow-hidden bg-[linear-gradient(90deg,#dbeafe_1px,transparent_1px),linear-gradient(#dbeafe_1px,transparent_1px)] bg-[size:48px_48px]">
@@ -484,22 +550,106 @@ function MapPanel({ latestReport, loading, reports }: { latestReport: FloodRepor
   );
 }
 
-function AiCard() {
+function AiCard({ reports = [] }: { reports?: FloodReport[] }) {
+  const latestReport = reports[0];
+  const review = latestReport ? aiReview(latestReport) : null;
+  const detectedCount = reports.filter((report) => aiReview(report).state === "detected").length;
+  const pendingCount = reports.filter((report) => aiReview(report).state === "review").length;
+
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold">YOLO Intake</h2>
-          <p className="mt-1 text-sm text-slate-500">Water-level analysis for citizen and drone images</p>
+          <h2 className="text-lg font-bold">User photo AI review</h2>
+          <p className="mt-1 text-sm text-slate-500">YOLO screens each user-submitted flood photo before it reaches the response queue.</p>
         </div>
         <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">AI</span>
       </div>
       <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
         <GooeyLoader className="mx-auto" primaryColor="#f87171" secondaryColor="#fca5a5" borderColor="#dbeafe" />
-        <p className="mt-4 text-center text-sm font-semibold text-slate-700">
-          {process.env.NEXT_PUBLIC_YOLO_STATUS || "Ready for YOLO API results"}
-        </p>
+        <p className="mt-4 text-center text-sm font-semibold text-slate-700">Ready for YOLO API results</p>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+          <span className="rounded-lg bg-white px-3 py-2 font-semibold text-rose-700">Detected {detectedCount}</span>
+          <span className="rounded-lg bg-white px-3 py-2 font-semibold text-amber-700">Review {pendingCount}</span>
+        </div>
       </div>
+
+      {latestReport && review ? (
+        <article className={`mt-4 overflow-hidden rounded-lg border ${review.className}`}>
+          {latestReport.imageUrl ? (
+            <img src={latestReport.imageUrl} alt="Latest user flood report" className="h-40 w-full object-cover" />
+          ) : (
+            <div className="flex h-40 items-center justify-center bg-white/70">
+              <ImageIcon className="h-10 w-10 opacity-60" />
+            </div>
+          )}
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <span className={`rounded-lg p-2 ${review.iconClassName}`}>
+                {review.state === "detected" ? <AlertTriangle className="h-4 w-4" /> : review.state === "low_evidence" ? <ShieldCheck className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+              </span>
+              <div>
+                <p className="font-bold">{review.title}</p>
+                <p className="mt-1 text-sm opacity-80">{review.detail}</p>
+                <p className="mt-2 text-xs opacity-75">{riskText(latestReport)} - {confidenceText(latestReport.confidence)}</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      ) : (
+        <div className="mt-4 rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">No user photos have reached AI review yet.</div>
+      )}
+    </section>
+  );
+}
+
+function AiReportReview({ reports }: { reports: FloodReport[] }) {
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 p-4">
+        <h2 className="text-lg font-bold">AI decisions from user reports</h2>
+        <p className="mt-1 text-sm text-slate-500">Only real user-submitted photos from Supabase are listed here.</p>
+      </div>
+      {reports.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
+          {reports.slice(0, 6).map((report) => {
+            const review = aiReview(report);
+            return (
+              <article key={report.id} className="overflow-hidden rounded-lg border border-slate-100 bg-white">
+                {report.imageUrl ? (
+                  <img src={report.imageUrl} alt="User-submitted flood report" className="h-44 w-full object-cover" />
+                ) : (
+                  <div className="flex h-44 items-center justify-center bg-slate-50 text-slate-300">
+                    <ImageIcon className="h-10 w-10" />
+                  </div>
+                )}
+                <div className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-slate-900">{report.reporterName}</p>
+                      <p className="mt-1 text-xs text-slate-500">{formatDate(report.createdAt)}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full border px-2 py-1 text-xs font-bold ${review.className}`}>{review.title}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <span className="rounded-lg bg-slate-50 px-3 py-2">Water <b>{report.depthCm === null ? "pending" : `${report.depthCm} cm`}</b></span>
+                    <span className="rounded-lg bg-slate-50 px-3 py-2">AI <b>{confidenceText(report.confidence)}</b></span>
+                  </div>
+                  <p className="line-clamp-2 text-sm text-slate-500">{report.labels.length > 0 ? report.labels.join(", ") : "No YOLO labels yet"}</p>
+                  <a className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900" href={reportMapsHref(report)} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    Open report location
+                  </a>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="p-8">
+          <EmptyState icon={ImageIcon} title="No user photos" description="When a user submits a report, the image will be screened by YOLO and shown here." />
+        </div>
+      )}
     </section>
   );
 }
@@ -563,7 +713,10 @@ function ReportsPanel({ error, loading, reports }: { error: string | null; loadi
       {reports.length > 0 ? (
         <div className="divide-y divide-slate-100">
           {reports.map((report) => (
-            <article key={report.id} className="grid gap-4 p-4 md:grid-cols-[120px_minmax(0,1fr)_170px_150px] md:items-center">
+            <article key={report.id} className="grid gap-4 p-4 md:grid-cols-[96px_120px_minmax(0,1fr)_170px_150px] md:items-center">
+              <div className="h-16 w-24 overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
+                {report.imageUrl ? <img src={report.imageUrl} alt="User flood report" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-slate-300"><ImageIcon className="h-5 w-5" /></div>}
+              </div>
               <div>
                 <p className="text-xs font-medium text-slate-400">Report ID</p>
                 <p className="font-bold text-slate-900">{report.id.slice(0, 8)}</p>
@@ -878,10 +1031,13 @@ function DronesView() {
   );
 }
 
-function AiView({ configured }: { configured: boolean | null }) {
+function AiView({ configured, reports }: { configured: boolean | null; reports: FloodReport[] }) {
   return (
     <section className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <AiCard />
+      <div className="flex flex-col gap-6">
+        <AiCard reports={reports} />
+        <AiReportReview reports={reports} />
+      </div>
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-bold">AI pipeline status</h2>
         <div className="mt-4 space-y-3 text-sm text-slate-600">
@@ -889,7 +1045,10 @@ function AiView({ configured }: { configured: boolean | null }) {
             Supabase <span className={configured ? "font-bold text-emerald-700" : "font-bold text-amber-700"}>{configured ? "Connected" : "Missing env"}</span>
           </p>
           <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-            YOLO endpoint <span className="font-bold text-slate-700">Configured by env</span>
+            YOLO endpoint <span className="font-bold text-slate-700">YOLO_API_URL</span>
+          </p>
+          <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+            Water level <span className="font-bold text-slate-700">depthCm from model</span>
           </p>
           <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
             Image storage <span className="font-bold text-slate-700">flood-images bucket</span>
@@ -899,6 +1058,7 @@ function AiView({ configured }: { configured: boolean | null }) {
     </section>
   );
 }
+
 
 function SettingsView({ configured }: { configured: boolean | null }) {
   return (

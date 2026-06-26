@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   Bell,
@@ -30,6 +30,36 @@ const navItems: Array<{
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<DashboardView>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [reportCount, setReportCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadStats() {
+      try {
+        const response = await fetch("/api/dashboard/stats", { cache: "no-store" });
+        const payload = (await response.json()) as { ok?: boolean; stats?: { userCount?: number | null; reportCount?: number | null } };
+        if (alive && response.ok && payload.ok) {
+          setUserCount(payload.stats?.userCount ?? null);
+          setReportCount(payload.stats?.reportCount ?? null);
+        }
+      } catch {
+        if (alive) {
+          setUserCount(null);
+          setReportCount(null);
+        }
+      }
+    }
+
+    loadStats();
+    const timer = window.setInterval(loadStats, 30000);
+
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   function selectView(view: DashboardView) {
     setActiveView(view);
@@ -73,7 +103,7 @@ export default function DashboardPage() {
           <div className="hidden items-center gap-3 text-sm md:flex">
             <span className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 font-medium text-blue-50">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              Online users: 124
+              Online users: {userCount ?? "-"}
             </span>
             <button
               className="relative rounded-lg bg-white/10 p-2 text-blue-50 transition-colors hover:bg-white/15"
@@ -82,7 +112,7 @@ export default function DashboardPage() {
             >
               <Bell className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                14
+                {reportCount ?? 0}
               </span>
             </button>
           </div>

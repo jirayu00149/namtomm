@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>rodnam Dashboard</title>
+  <link rel="icon" href="/rodnam-logo.svg" />
+  <style>
+    :root {
+      --navy: #16365c;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --green: #059669;
+      --amber: #d97706;
+      --rose: #e11d48;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #dbe3eb;
+      --soft: #f4f7f6;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, a { font: inherit; }
+    .topbar { position: sticky; top: 0; z-index: 20; background: var(--navy); color: white; border-bottom: 1px solid #0f2847; box-shadow: 0 2px 12px rgba(15, 23, 42, .16); }
+    .topbar-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; }
+    .brand { display: inline-flex; align-items: center; gap: 12px; color: white; text-decoration: none; border: 0; background: transparent; cursor: pointer; padding: 0; }
+    .brand-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 8px; background: white; border: 1px solid rgba(255,255,255,.25); overflow: hidden; }
+    .brand-mark img { width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+    .brand-title { display: block; font-size: 20px; line-height: 1; font-weight: 800; }
+    .brand-subtitle { display: block; margin-top: 4px; font-size: 12px; color: #bfdbfe; }
+    .nav { display: flex; align-items: center; gap: 4px; }
+    .nav-button { border: 0; border-radius: 8px; background: transparent; color: #dbeafe; cursor: pointer; padding: 10px 12px; font-size: 14px; font-weight: 700; }
+    .nav-button:hover { background: rgba(255,255,255,.10); color: white; }
+    .nav-button.active { background: white; color: var(--navy); }
+    .status-strip { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; padding: 9px 11px; background: rgba(255,255,255,.10); color: #eff6ff; font-weight: 700; }
+    .dot { width: 9px; height: 9px; border-radius: 999px; background: #34d399; }
+    .notify { min-width: 38px; justify-content: center; background: rgba(225, 29, 72, .95); }
+    .shell { max-width: 1280px; margin: 0 auto; padding: 24px 20px 36px; }
+    .stack { display: flex; flex-direction: column; gap: 18px; }
+    .hero, .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 5px rgba(15,23,42,.05); }
+    .hero { padding: 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: #e0f2fe; color: #0369a1; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 800; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { margin-top: 12px; font-size: clamp(26px, 3vw, 38px); line-height: 1.08; }
+    .lead { max-width: 760px; margin-top: 10px; color: var(--muted); line-height: 1.65; }
+    .sync { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #bbf7d0; background: #ecfdf5; color: #047857; border-radius: 8px; padding: 12px 14px; font-weight: 800; white-space: nowrap; }
+    .grid { display: grid; gap: 16px; }
+    .summary { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .summary-card { padding: 16px; min-height: 116px; }
+    .summary-label { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .summary-value { margin-top: 10px; font-size: 34px; line-height: 1; font-weight: 850; letter-spacing: 0; }
+    .summary-unit { color: #94a3b8; font-size: 13px; font-weight: 500; }
+    .layout { grid-template-columns: minmax(0, 1.45fr) minmax(330px, .85fr); align-items: start; }
+    .card-head { padding: 16px; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .card-title { font-size: 18px; font-weight: 850; }
+    .card-subtitle { margin-top: 5px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 8px; background: #2b6cb0; color: white; text-decoration: none; padding: 10px 13px; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .button:hover { background: #245b96; }
+    .button.light { background: #f1f5f9; color: #0f172a; border: 1px solid var(--line); }
+    .map { min-height: 540px; position: relative; overflow: hidden; background-image: linear-gradient(90deg,#dbeafe 1px,transparent 1px), linear-gradient(#dbeafe 1px,transparent 1px); background-size: 48px 48px; }
+    .map::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, #f0f9ff, #fff, #ecfdf5); }
+    .map-ring { position: absolute; border: 2px solid rgba(96,165,250,.55); border-radius: 999px; transform: rotate(-10deg); }
+    .marker { position: absolute; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .pin { width: 44px; height: 44px; border-radius: 999px; border: 4px solid white; display: grid; place-items: center; color: white; box-shadow: 0 10px 24px rgba(15,23,42,.22); background: var(--blue); }
+    .pin.danger { background: var(--rose); }
+    .pin.watch { background: var(--amber); }
+    .marker-label { max-width: 180px; text-align: center; padding: 8px 10px; background: white; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 20px rgba(15,23,42,.10); font-size: 12px; }
+    .latest { position: absolute; left: 16px; right: 16px; bottom: 16px; background: rgba(255,255,255,.96); border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 14px 32px rgba(15,23,42,.16); }
+    .ai-box { padding: 16px; }
+    .loader { width: 28px; height: 28px; border-radius: 999px; border: 4px solid #bfdbfe; border-top-color: #38bdf8; animation: spin .8s linear infinite; flex: 0 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .soft-panel { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px; }
+    .split { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .metric { background: white; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 800; }
+    .report-list { display: flex; flex-direction: column; }
+    .report-row { display: grid; grid-template-columns: 92px 110px minmax(0,1fr) 160px 150px; align-items: center; gap: 16px; padding: 14px 16px; border-top: 1px solid #edf2f7; }
+    .thumb { width: 92px; height: 64px; border-radius: 8px; object-fit: cover; background: #f1f5f9; border: 1px solid #e2e8f0; display: grid; place-items: center; color: #94a3b8; overflow: hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .tag { display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid transparent; padding: 5px 8px; font-size: 12px; font-weight: 850; white-space: nowrap; }
+    .tag.danger, .tag.detected { background: #ffe4e6; color: #be123c; border-color: #fecdd3; }
+    .tag.watch, .tag.review { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+    .tag.safe { background: #dcfce7; color: #047857; border-color: #bbf7d0; }
+    .tag.pending { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .ai-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .ai-card { overflow: hidden; }
+    .ai-card img { width: 100%; height: 210px; object-fit: cover; background: #f1f5f9; }
+    .ai-card-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .drone-frame { width: 100%; height: 720px; border: 0; background: #020617; }
+    .hidden { display: none !important; }
+    .empty { padding: 34px; text-align: center; color: var(--muted); }
+    .muted { color: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    @media (max-width: 1060px) { .summary { grid-template-columns: repeat(2, minmax(0,1fr)); } .layout, .ai-grid { grid-template-columns: 1fr; } .report-row { grid-template-columns: 92px minmax(0,1fr); } .report-row > :nth-child(n+4) { grid-column: 2; } .hero { align-items: flex-start; flex-direction: column; } .status-strip { display: none; } }
+    @media (max-width: 760px) { .topbar-inner { align-items: stretch; flex-direction: column; } .nav { overflow-x: auto; padding-bottom: 2px; } .summary { grid-template-columns: 1fr; } .split { grid-template-columns: 1fr; } .latest { align-items: flex-start; flex-direction: column; } .report-row { grid-template-columns: 1fr; } .thumb { width: 100%; height: 180px; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="brand" type="button" data-view-button="overview">
+        <span class="brand-mark"><img src="/rodnam-logo.svg" alt="rodnam" /></span>
+        <span><span class="brand-title">rodnam</span><span class="brand-subtitle">Admin Dashboard</span></span>
+      </button>
+      <nav class="nav" aria-label="Dashboard sections">
+        <button class="nav-button active" type="button" data-view-button="overview">Overview</button>
+        <button class="nav-button" type="button" data-view-button="reports">Reports</button>
+        <button class="nav-button" type="button" data-view-button="drones">Drones</button>
+        <button class="nav-button" type="button" data-view-button="ai">AI</button>
+        <button class="nav-button" type="button" data-view-button="settings">Settings</button>
+      </nav>
+      <div class="status-strip">
+        <span class="pill"><span class="dot"></span>Users: <span id="headerUsers">-</span></span>
+        <span class="pill notify" title="Incoming reports" id="headerReports">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Live command center</div>
+        <h1>Flood response dashboard</h1>
+        <p class="lead">Citizen reports, user photo AI screening, YOLO water-level measurement, map links and drone operations are pulled from the live API.</p>
+      </div>
+      <div class="sync"><span class="dot"></span><span id="syncText">Connecting...</span></div>
+    </section>
+
+    <section class="grid summary" id="summaryGrid"></section>
+    <section class="stack" id="viewRoot"></section>
+  </main>
+
+  <script>
+    const state = { view: "overview", reports: [], stats: null, drones: null, loading: true, error: null, updatedAt: null };
+    const markerPositions = [[38,52],[70,64],[54,42],[18,30],[62,26],[28,70]];
+
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+    const formatDate = (value) => value ? new Intl.DateTimeFormat("th-TH", { dateStyle: "short", timeStyle: "short" }).format(new Date(value)) : "-";
+    const riskText = (report) => report.depthCm === null || report.depthCm === undefined ? "YOLO pending" : `YOLO ${report.depthCm} cm`;
+    const confidenceText = (value) => value === null || value === undefined ? "confidence pending" : `${Math.round(Number(value) * 100)}% confidence`;
+    const mapsHref = (report) => report ? `https://www.google.com/maps/search/?api=1&query=${report.lat},${report.lng}` : "https://www.google.com/maps";
+    const riskClass = (risk) => risk === "danger" ? "danger" : risk === "watch" ? "watch" : risk === "safe" ? "safe" : "pending";
+
+    function reviewFor(report) {
+      const labels = (report.labels || []).join(" ").toLowerCase();
+      const flood = report.risk === "danger" || report.risk === "watch" || Number(report.depthCm) > 5 || /(flood|water|waterline|inundation|road_flood)/i.test(labels);
+      const safe = report.risk === "safe" && (Number(report.depthCm) === 0 || /(dry|no[_ -]?flood|not[_ -]?flood|normal|safe)/i.test(labels) || (report.labels || []).length > 0);
+      if (flood) return { state: "detected", title: "Flood detected", detail: "AI found flood/water evidence in this user photo." };
+      if (safe) return { state: "safe", title: "Low flood evidence", detail: "AI marked this photo as safe or not flooded." };
+      return { state: "review", title: "Needs review", detail: "YOLO is pending or confidence is not strong enough." };
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok || payload.ok === false) throw new Error(payload.message || `Request failed: ${url}`);
+      return payload;
+    }
+
+    async function loadAll() {
+      state.loading = true;
+      render();
+      try {
+        const [reports, stats, drones] = await Promise.allSettled([
+          fetchJson("/api/reports"),
+          fetchJson("/api/dashboard/stats"),
+          fetchJson("/api/drones"),
+        ]);
+        if (reports.status === "fulfilled") state.reports = reports.value.reports || [];
+        if (stats.status === "fulfilled") state.stats = stats.value.stats || null;
+        if (drones.status === "fulfilled") state.drones = drones.value;
+        state.error = reports.status === "rejected" ? reports.reason.message : null;
+        state.updatedAt = new Date();
+      } catch (error) {
+        state.error = error.message || "Failed to load dashboard data.";
+      } finally {
+        state.loading = false;
+        render();
+      }
+    }
+
+    function setView(view) {
+      state.view = view;
+      document.querySelectorAll("[data-view-button]").forEach((button) => button.classList.toggle("active", button.dataset.viewButton === view));
+      render();
+    }
+
+    function renderSummary() {
+      const reports = state.reports;
+      const stats = state.stats || {};
+      const detected = reports.filter((report) => reviewFor(report).state === "detected").length;
+      const images = reports.filter((report) => report.imagePath).length;
+      const assigned = reports.filter((report) => report.status === "assigned").length;
+      const items = [
+        ["Real users", stats.userCount ?? 0, "users"],
+        ["User reports", reports.length, "items"],
+        ["Stored images", images, "files"],
+        ["AI detected", detected, "photos"],
+        ["Assigned", assigned, "cases"],
+      ];
+      $("summaryGrid").innerHTML = items.map(([label, value, unit]) => `
+        <article class="card summary-card"><p class="summary-label">${label}</p><p class="summary-value">${value} <span class="summary-unit">${unit}</span></p></article>
+      `).join("");
+      $("headerUsers").textContent = stats.userCount ?? "-";
+      $("headerReports").textContent = stats.reportCount ?? reports.length;
+      $("syncText").textContent = state.updatedAt ? `Synced ${formatDate(state.updatedAt)}` : "Connecting...";
+    }
+
+    function renderMapPanel() {
+      const latest = state.reports[0];
+      const markers = state.reports.slice(0, 6).map((report, index) => {
+        const [left, top] = markerPositions[index % markerPositions.length];
+        return `<div class="marker" style="left:${left}%;top:${top}%"><span class="pin ${riskClass(report.risk)}">!</span><div class="marker-label"><b>${escapeHtml(report.reporterName)}</b><br><span class="muted">${riskText(report)}</span></div></div>`;
+      }).join("");
+      return `
+        <section class="card">
+          <div class="card-head"><div><h2 class="card-title">Live response map</h2><p class="card-subtitle">Markers come from live Supabase reports.</p></div><a class="button" href="${mapsHref(latest)}" target="_blank" rel="noreferrer">Open map</a></div>
+          <div class="map">
+            <span class="map-ring" style="left:7%;top:23%;width:76%;height:128px"></span><span class="map-ring" style="right:8%;bottom:14%;width:54%;height:144px;transform:rotate(12deg)"></span>
+            ${markers || `<div class="empty" style="position:relative">No active cases yet.</div>`}
+            ${latest ? `<div class="latest"><div><b>Latest report submitted</b><p class="muted mono">${escapeHtml(latest.id)} - ${escapeHtml(latest.reporterName)} - ${riskText(latest)}</p></div><span class="tag ${riskClass(latest.risk)}">Marker added</span></div>` : ""}
+          </div>
+        </section>`;
+    }
+
+    function renderAiBox() {
+      const latest = state.reports[0];
+      const review = latest ? reviewFor(latest) : null;
+      const detected = state.reports.filter((report) => reviewFor(report).state === "detected").length;
+      const pending = state.reports.filter((report) => reviewFor(report).state === "review").length;
+      return `
+        <section class="card ai-box">
+          <div class="card-head" style="padding:0 0 14px;border-bottom:0"><div><h2 class="card-title">User photo AI review</h2><p class="card-subtitle">YOLO screens each photo submitted by users.</p></div><span class="tag pending">AI</span></div>
+          <div class="soft-panel"><div style="display:flex;align-items:center;gap:12px"><span class="loader"></span><b>Ready for YOLO water-level results</b></div><div class="split" style="margin-top:14px"><span class="metric">Detected ${detected}</span><span class="metric">Review ${pending}</span></div></div>
+          ${latest ? `<article class="card" style="margin-top:14px;overflow:hidden"><div class="thumb" style="width:100%;height:190px;border-radius:0">${latest.imageUrl ? `<img src="${latest.imageUrl}" alt="Latest user report">` : "No image"}</div><div style="padding:14px"><span class="tag ${review.state}">${review.title}</span><p style="margin-top:10px"><b>${riskText(latest)}</b></p><p class="muted">${confidenceText(latest.confidence)}</p></div></article>` : `<div class="empty">No user photos have reached AI review yet.</div>`}
+        </section>`;
+    }
+
+    function renderQueue() {
+      const queue = state.reports.filter((report) => report.priority !== "normal").slice(0, 5);
+      return `<section class="card ai-box"><h2 class="card-title">Priority response queue</h2>${queue.length ? queue.map((report) => `<article style="border-top:1px solid #edf2f7;padding:12px 0"><b>${escapeHtml(report.reporterName)}</b><p class="muted">${report.lat.toFixed(5)}, ${report.lng.toFixed(5)}</p><span class="tag ${riskClass(report.risk)}">${riskText(report)}</span></article>`).join("") : `<div class="empty">No priority cases</div>`}</section>`;
+    }
+
+    function renderReportsPanel(limit) {
+      const list = typeof limit === "number" ? state.reports.slice(0, limit) : state.reports;
+      return `<section class="card"><div class="card-head"><div><h2 class="card-title">Incoming reports</h2><p class="card-subtitle">Supabase data: user image, location and YOLO result.</p></div><button class="button light" type="button" onclick="setView('reports')">Open reports</button></div>${state.error ? `<div class="soft-panel" style="margin:16px;color:#be123c">${escapeHtml(state.error)}</div>` : ""}<div class="report-list">${list.length ? list.map(reportRow).join("") : `<div class="empty">No dashboard records.</div>`}</div></section>`;
+    }
+
+    function reportRow(report) {
+      const review = reviewFor(report);
+      return `<article class="report-row"><div class="thumb">${report.imageUrl ? `<img src="${report.imageUrl}" alt="User flood report">` : "No image"}</div><div><p class="muted">Report ID</p><b class="mono">${escapeHtml(report.id).slice(0,8)}</b></div><div><b>${escapeHtml(report.reporterName)}</b><p class="muted">${escapeHtml(report.details || "No additional details")}</p><a class="muted" href="${mapsHref(report)}" target="_blank" rel="noreferrer">Open location</a></div><div><b>${riskText(report)}</b><p class="muted">${confidenceText(report.confidence)}</p></div><div><span class="tag ${review.state}">${review.title}</span><p class="muted">${formatDate(report.createdAt)}</p></div></article>`;
+    }
+
+    function renderAiView() {
+      const cards = state.reports.slice(0, 8).map((report) => {
+        const review = reviewFor(report);
+        return `<article class="card ai-card">${report.imageUrl ? `<img src="${report.imageUrl}" alt="User-submitted flood report">` : `<div class="empty" style="height:210px">No image</div>`}<div class="ai-card-body"><div><span class="tag ${review.state}">${review.title}</span><h3 style="margin-top:10px">${escapeHtml(report.reporterName)}</h3><p class="muted">${review.detail}</p></div><div class="split"><span class="metric">Water <b>${report.depthCm === null ? "pending" : `${report.depthCm} cm`}</b></span><span class="metric">AI <b>${confidenceText(report.confidence)}</b></span></div><p class="muted">${(report.labels || []).length ? escapeHtml(report.labels.join(", ")) : "No YOLO labels yet"}</p><a class="button light" href="${mapsHref(report)}" target="_blank" rel="noreferrer">Open location</a></div></article>`;
+      }).join("");
+      return `<section class="grid ai-grid">${cards || `<section class="card empty">No user photos yet.</section>`}<aside class="card ai-box"><h2 class="card-title">AI pipeline status</h2><div class="stack" style="margin-top:14px"><span class="metric">Supabase: connected by API</span><span class="metric">YOLO endpoint: YOLO_API_URL</span><span class="metric">Water level: depthCm from model or scale boxes</span><span class="metric">Storage: flood-images bucket</span></div></aside></section>`;
+    }
+
+    function renderDronesView() {
+      const drones = state.drones?.drones || [];
+      const waterEvents = state.drones?.waterEvents || [];
+      return `<section class="stack"><section class="card"><div class="card-head"><div><h2 class="card-title">Legacy drone2 control room</h2><p class="card-subtitle">Embedded from the previous drone web app and connected with the new dashboard.</p></div><a class="button" href="https://autokgapai-drone.pages.dev/" target="_blank" rel="noreferrer">Open full screen</a></div><iframe class="drone-frame" title="Legacy drone2 control room" src="https://autokgapai-drone.pages.dev/"></iframe></section><section class="grid ai-grid"><div class="card ai-box"><h2 class="card-title">Fleet status</h2>${drones.length ? drones.map((drone) => `<article style="border-top:1px solid #edf2f7;padding:12px 0"><b>${escapeHtml(drone.name || drone.code)}</b><p class="muted">Battery ${drone.battery_percent ?? "--"}% - Signal ${drone.signal_percent ?? "--"}%</p></article>`).join("") : `<div class="empty">No drones connected</div>`}</div><div class="card ai-box"><h2 class="card-title">YOLO water events</h2>${waterEvents.length ? waterEvents.slice(0,5).map((event) => `<article style="border-top:1px solid #edf2f7;padding:12px 0"><b>${escapeHtml(event.device_code)}</b><p class="muted">${event.yolo_depth_cm ?? "pending"} cm - ${escapeHtml(event.yolo_risk)}</p></article>`).join("") : `<div class="empty">No YOLO water events</div>`}</div></section></section>`;
+    }
+
+    function renderSettingsView() {
+      return `<section class="card ai-box"><h2 class="card-title">System settings</h2><div class="stack" style="margin-top:14px"><span class="metric">Database: /api/reports and /api/dashboard/stats</span><span class="metric">YOLO: set YOLO_API_URL and optional YOLO_API_KEY on the Worker</span><span class="metric">Drone bridge: /api/yolo/water-level, /api/drones/telemetry, /api/drones/captures</span></div></section>`;
+    }
+
+    function render() {
+      renderSummary();
+      const root = $("viewRoot");
+      if (state.loading && state.reports.length === 0) {
+        root.innerHTML = `<section class="card empty"><span class="loader" style="display:inline-block"></span><p style="margin-top:14px">Loading live database reports...</p></section>`;
+        return;
+      }
+      if (state.view === "overview") root.innerHTML = `<section class="grid layout">${renderMapPanel()}<aside class="stack">${renderAiBox()}${renderQueue()}</aside></section>${renderReportsPanel(6)}`;
+      if (state.view === "reports") root.innerHTML = renderReportsPanel();
+      if (state.view === "ai") root.innerHTML = renderAiView();
+      if (state.view === "drones") root.innerHTML = renderDronesView();
+      if (state.view === "settings") root.innerHTML = renderSettingsView();
+    }
+
+    document.querySelectorAll("[data-view-button]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.viewButton)));
+    loadAll();
+    window.setInterval(loadAll, 10000);
+  </script>
+</body>
+</html>
