@@ -310,6 +310,118 @@
       flex: 0 0 auto;
     }
 
+    .ai-result-card {
+      display: none;
+      margin-top: 16px;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      background: #f0f9ff;
+      padding: 16px;
+    }
+
+    .ai-result-card.show { display: block; }
+    .ai-result-card.danger { background: #fff1f2; border-color: #fecdd3; }
+    .ai-result-card.watch { background: #fffbeb; border-color: #fde68a; }
+    .ai-result-card.safe { background: #ecfdf5; border-color: #bbf7d0; }
+
+    .ai-result-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .ai-eyebrow {
+      margin: 0 0 4px;
+      color: #0369a1;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .ai-result-head h4 {
+      margin: 0;
+      color: #0f172a;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .ai-risk-chip {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      border: 1px solid #bae6fd;
+      background: #ffffff;
+      color: #075985;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .ai-result-card.danger .ai-risk-chip { border-color: #fecdd3; color: #be123c; }
+    .ai-result-card.watch .ai-risk-chip { border-color: #fde68a; color: #b45309; }
+    .ai-result-card.safe .ai-risk-chip { border-color: #bbf7d0; color: #047857; }
+
+    .ai-result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .ai-metric {
+      min-width: 0;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 12px;
+    }
+
+    .ai-metric-label {
+      display: block;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .ai-metric-value {
+      display: block;
+      margin-top: 6px;
+      color: #0f172a;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ai-meter {
+      grid-column: 1 / -1;
+      height: 13px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #dbeafe;
+    }
+
+    .ai-meter-fill {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+      transition: width 0.35s ease;
+    }
+
+    .ai-result-card.danger .ai-meter-fill { background: linear-gradient(90deg, #fb7185, #e11d48); }
+    .ai-result-card.watch .ai-meter-fill { background: linear-gradient(90deg, #fbbf24, #d97706); }
+    .ai-result-card.safe .ai-meter-fill { background: linear-gradient(90deg, #34d399, #059669); }
+
+    .ai-labels {
+      grid-column: 1 / -1;
+      margin: 2px 0 0;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.5;
+    }
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -444,6 +556,27 @@
             <div id="statusMessage" class="status-message">กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...</div>
           </div>
         </div>
+        <div id="aiResult" class="ai-result-card" aria-live="polite">
+          <div class="ai-result-head">
+            <div>
+              <p class="ai-eyebrow">YOLO AI</p>
+              <h4>ผลตรวจระดับน้ำ</h4>
+            </div>
+            <span id="aiRiskChip" class="ai-risk-chip">รอตรวจ</span>
+          </div>
+          <div class="ai-result-grid">
+            <div class="ai-meter"><span id="aiWaterFill" class="ai-meter-fill"></span></div>
+            <div class="ai-metric">
+              <span class="ai-metric-label">ระดับน้ำ</span>
+              <span id="aiDepthValue" class="ai-metric-value">-- ซม.</span>
+            </div>
+            <div class="ai-metric">
+              <span class="ai-metric-label">ความมั่นใจ</span>
+              <span id="aiConfidenceValue" class="ai-metric-value">--</span>
+            </div>
+            <p id="aiLabels" class="ai-labels">อัปโหลดรูปเพื่อให้ AI วิเคราะห์ระดับน้ำ</p>
+          </div>
+        </div>
       </section>
     </aside>
   </main>
@@ -498,11 +631,15 @@
     let userLat = DEFAULT_LOCATION.lat;
     let userLng = DEFAULT_LOCATION.lng;
     let userMarker = null;
+    let locationSource = 'default';
+    let locationAccuracyM = null;
     loadOnlineUserCount();
 
-    function setUserLocation(lat, lng, popupText) {
+    function setUserLocation(lat, lng, popupText, source = 'manual', accuracyM = null) {
       userLat = lat;
       userLng = lng;
+      locationSource = source;
+      locationAccuracyM = accuracyM;
       document.getElementById('locationInput').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
       map.setView([lat, lng], 14);
 
@@ -516,11 +653,11 @@
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => setUserLocation(position.coords.latitude, position.coords.longitude, 'ตำแหน่งของคุณ'),
-        () => setUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng, 'ตำแหน่งเริ่มต้น')
+        (position) => setUserLocation(position.coords.latitude, position.coords.longitude, 'ตำแหน่งของคุณ', 'gps', position.coords.accuracy ?? null),
+        () => setUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng, 'ตำแหน่งเริ่มต้น', 'default', null)
       );
     } else {
-      setUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng, 'ตำแหน่งเริ่มต้น');
+      setUserLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng, 'ตำแหน่งเริ่มต้น', 'default', null);
     }
 
     function handleFileName(input) {
@@ -549,6 +686,56 @@
         : '<i class="fa-solid fa-paper-plane"></i> ส่งรายงานและประเมิน AI';
     }
 
+
+    function numericDepth(yolo) {
+      const value = Number(yolo && yolo.depthCm);
+      return Number.isFinite(value) ? value : null;
+    }
+
+    function formatDepth(yolo) {
+      const depth = numericDepth(yolo);
+      return depth === null ? 'รอผล' : `${depth.toFixed(1)} ซม.`;
+    }
+
+    function formatConfidence(value) {
+      const confidence = Number(value);
+      return Number.isFinite(confidence) ? `${Math.round(confidence * 100)}%` : 'รอผล';
+    }
+
+    function riskLabel(risk) {
+      return ({ danger: 'อันตราย', watch: 'เฝ้าระวัง', safe: 'ปลอดภัย', pending: 'รอตรวจ' })[risk] || 'รอตรวจ';
+    }
+
+    function resultClass(risk) {
+      return ['danger', 'watch', 'safe'].includes(risk) ? risk : 'pending';
+    }
+
+    function renderAiResult(yolo) {
+      const card = document.getElementById('aiResult');
+      if (!card) return;
+
+      const risk = yolo && yolo.risk ? yolo.risk : 'pending';
+      const depth = numericDepth(yolo);
+      const confidence = yolo ? yolo.confidence : null;
+      const labels = yolo && Array.isArray(yolo.labels) ? yolo.labels : [];
+      const percent = depth === null ? 0 : Math.max(4, Math.min(100, (depth / 80) * 100));
+
+      card.className = `ai-result-card show ${resultClass(risk)}`;
+      document.getElementById('aiRiskChip').innerText = riskLabel(risk);
+      document.getElementById('aiDepthValue').innerText = formatDepth(yolo);
+      document.getElementById('aiConfidenceValue').innerText = formatConfidence(confidence);
+      document.getElementById('aiWaterFill').style.width = `${percent}%`;
+      document.getElementById('aiLabels').innerText = labels.length
+        ? `ตรวจพบ: ${labels.join(', ')}`
+        : (yolo && yolo.message ? yolo.message : 'AI ยังไม่พบ label จากภาพนี้');
+    }
+
+    function clearAiResult() {
+      const card = document.getElementById('aiResult');
+      if (!card) return;
+      card.className = 'ai-result-card';
+      document.getElementById('aiWaterFill').style.width = '0%';
+    }
     function showSuccessModal(title, message) {
       document.getElementById('successTitle').innerText = title;
       document.getElementById('successMessage').innerText = message;
@@ -591,11 +778,14 @@
       formData.append('image', image);
       formData.append('lat', String(userLat));
       formData.append('lng', String(userLng));
+      formData.append('locationSource', locationSource);
+      if (locationAccuracyM !== null) formData.append('locationAccuracyM', String(locationAccuracyM));
       formData.append('details', detailsInput.value || '');
       formData.append('userId', getRodnamUserId());
       formData.append('reporterName', 'ผู้ใช้หน้า User');
 
       setSubmitting(true);
+      clearAiResult();
       showSubmitStatus('loading', 'กำลังส่งรายงาน', 'กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...');
 
       try {
@@ -603,11 +793,15 @@
         const payload = await readJson(response);
 
         if (!response.ok || !payload.ok) {
+          if (payload.yolo) renderAiResult(payload.yolo);
           throw new Error(payload.message || `ส่งรายงานไม่สำเร็จ (${response.status})`);
         }
 
-        const depth = payload.yolo && payload.yolo.depthCm !== null && payload.yolo.depthCm !== undefined ? `${payload.yolo.depthCm} ซม.` : '-';
-        const risk = payload.yolo && payload.yolo.risk ? payload.yolo.risk : 'pending';
+        const yolo = payload.yolo || {};
+        renderAiResult(yolo);
+        const depth = formatDepth(yolo);
+        const risk = yolo.risk || 'pending';
+        const confidence = formatConfidence(yolo.confidence);
 
         L.circle([userLat + 0.001, userLng + 0.001], {
           color: '#dc2626',
@@ -616,7 +810,7 @@
           radius: 120
         }).addTo(map).bindPopup(`<b>ระดับน้ำ ${depth}</b><br>ประเมินโดย YOLO<br>สถานะ: ${risk}`).openPopup();
 
-        showSuccessModal('ส่งรายงานสำเร็จ', `ระบบบันทึกรูปภาพ พิกัด และผลวิเคราะห์ระดับน้ำเรียบร้อย สถานะล่าสุด: ${risk}`);
+        showSuccessModal('ส่งรายงานสำเร็จ', 'AI วัดระดับน้ำ ' + depth + ' สถานะ ' + riskLabel(risk) + ' ความมั่นใจ ' + confidence + ' และบันทึกลงฐานข้อมูลแล้ว');
         document.getElementById('submitStatus').className = 'submit-status';
         fileInput.value = '';
         handleFileName(fileInput);

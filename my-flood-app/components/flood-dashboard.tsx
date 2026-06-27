@@ -188,12 +188,23 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-function riskText(report: FloodReport) {
-  if (report.depthCm === null) {
-    return "YOLO pending";
-  }
+function waterDepthNumber(report: Pick<FloodReport, "depthCm">) {
+  const value = Number(report.depthCm);
+  return Number.isFinite(value) ? value : null;
+}
 
-  return `YOLO ${report.depthCm} cm`;
+function waterLevelPercent(report: Pick<FloodReport, "depthCm">) {
+  const depth = waterDepthNumber(report);
+  return depth === null ? 0 : Math.max(4, Math.min(100, (depth / 80) * 100));
+}
+
+function waterDepthText(report: Pick<FloodReport, "depthCm">) {
+  const depth = waterDepthNumber(report);
+  return depth === null ? "pending" : depth.toFixed(1) + " cm";
+}
+
+function riskText(report: FloodReport) {
+  return waterDepthNumber(report) === null ? "YOLO pending" : "YOLO " + waterDepthText(report);
 }
 
 function reportMapsHref(report: FloodReport | undefined) {
@@ -252,6 +263,24 @@ function aiReview(report: FloodReport) {
   };
 }
 
+function WaterLevelMeter({ report }: { report: FloodReport }) {
+  const depth = waterDepthNumber(report);
+  const percent = waterLevelPercent(report);
+  const fillClass = report.risk === "danger" ? "bg-rose-500" : report.risk === "watch" ? "bg-amber-500" : report.risk === "safe" ? "bg-emerald-500" : "bg-blue-500";
+  const labelClass = report.risk === "danger" ? "text-rose-700" : report.risk === "watch" ? "text-amber-700" : report.risk === "safe" ? "text-emerald-700" : "text-slate-700";
+
+  return (
+    <div className="rounded-lg border border-slate-100 bg-white/80 p-3">
+      <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold">
+        <span className="text-slate-500">Water level</span>
+        <span className={labelClass}>{depth === null ? "pending" : waterDepthText(report)}</span>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+        <span className={["block h-full rounded-full", fillClass].join(" ")} style={{ width: percent + "%" }} />
+      </div>
+    </div>
+  );
+}
 function EmptyState({
   icon: Icon,
   title,
@@ -422,7 +451,7 @@ function OverviewView({
 
       <SummaryGrid summary={summary} />
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.9fr)]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <MapPanel latestReport={latestReport} loading={loading} reports={reports} />
         <aside className="flex flex-col gap-4">
           <AiCard reports={reports} />
@@ -437,12 +466,12 @@ function OverviewView({
 
 function SummaryGrid({ summary }: { summary: Array<{ label: string; value: number; unit: string; icon: typeof Users; className: string }> }) {
   return (
-    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
       {summary.map((item) => {
         const Icon = item.icon;
 
         return (
-          <article key={item.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <article key={item.label} className="min-h-[116px] rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-slate-500">{item.label}</p>
@@ -591,6 +620,9 @@ function AiCard({ reports = [] }: { reports?: FloodReport[] }) {
               <div>
                 <p className="font-bold">{review.title}</p>
                 <p className="mt-1 text-sm opacity-80">{review.detail}</p>
+                <div className="mt-3">
+                  <WaterLevelMeter report={latestReport} />
+                </div>
                 <p className="mt-2 text-xs opacity-75">{riskText(latestReport)} - {confidenceText(latestReport.confidence)}</p>
               </div>
             </div>
@@ -631,8 +663,9 @@ function AiReportReview({ reports }: { reports: FloodReport[] }) {
                     </div>
                     <span className={`shrink-0 rounded-full border px-2 py-1 text-xs font-bold ${review.className}`}>{review.title}</span>
                   </div>
+                  <WaterLevelMeter report={report} />
                   <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                    <span className="rounded-lg bg-slate-50 px-3 py-2">Water <b>{report.depthCm === null ? "pending" : `${report.depthCm} cm`}</b></span>
+                    <span className="rounded-lg bg-slate-50 px-3 py-2">Status <b>{report.risk}</b></span>
                     <span className="rounded-lg bg-slate-50 px-3 py-2">AI <b>{confidenceText(report.confidence)}</b></span>
                   </div>
                   <p className="line-clamp-2 text-sm text-slate-500">{report.labels.length > 0 ? report.labels.join(", ") : "No YOLO labels yet"}</p>
