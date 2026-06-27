@@ -28,6 +28,10 @@
     .brand img { width: 46px; height: 46px; border-radius: 8px; background: white; object-fit: contain; }
     .brand-title { display: block; font-size: 20px; line-height: 1; font-weight: 800; }
     .brand-subtitle { display: block; margin-top: 4px; color: #bfdbfe; font-size: 12px; }
+    .nav { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; flex: 1; }
+    .nav-button { border: 0; border-radius: 8px; background: transparent; color: #dbeafe; cursor: pointer; padding: 10px 12px; font-size: 14px; font-weight: 800; white-space: nowrap; }
+    .nav-button:hover, .nav-button:focus-visible { background: rgba(255,255,255,.12); color: white; outline: none; }
+    .nav-button.active { background: white; color: var(--navy); box-shadow: 0 1px 6px rgba(15,23,42,.18); }
     .status-strip { display: flex; align-items: center; gap: 10px; font-size: 13px; }
     .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; padding: 9px 11px; background: rgba(255,255,255,.10); color: #eff6ff; font-weight: 700; }
     .dot { width: 9px; height: 9px; border-radius: 999px; background: #34d399; }
@@ -40,12 +44,12 @@
     .lead { max-width: 760px; margin-top: 10px; color: var(--muted); line-height: 1.65; }
     .sync { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #bbf7d0; background: #ecfdf5; color: #047857; border-radius: 8px; padding: 12px 14px; font-weight: 800; white-space: nowrap; }
     .grid { display: grid; gap: 16px; }
-    .summary { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .summary { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 16px; }
     .summary-card { min-height: 116px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
     .summary-label { color: var(--muted); font-size: 13px; font-weight: 700; }
     .summary-value { margin-top: 10px; font-size: 34px; line-height: 1; font-weight: 850; letter-spacing: 0; font-variant-numeric: tabular-nums; }
     .summary-unit { color: #94a3b8; font-size: 13px; font-weight: 500; }
-    .layout { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; margin-top: 16px; }
+    .layout { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; margin-top: 0; }
     .card-head { padding: 16px; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .card-title { font-size: 18px; font-weight: 850; }
     .card-subtitle { margin-top: 5px; color: var(--muted); font-size: 14px; line-height: 1.55; }
@@ -87,7 +91,7 @@
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .empty { padding: 34px; text-align: center; color: var(--muted); }
     @media (max-width: 1060px) { .summary, .layout, .ai-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .report-row { grid-template-columns: 92px minmax(0,1fr); } .report-row > :nth-child(n+4) { grid-column: 2; } .hero { align-items: flex-start; flex-direction: column; } }
-    @media (max-width: 760px) { .topbar-inner { align-items: stretch; flex-direction: column; } .status-strip { flex-wrap: wrap; } .summary, .layout, .ai-grid, .split { grid-template-columns: 1fr; } .report-row { grid-template-columns: 1fr; } .thumb { width: 100%; height: 180px; } }
+    @media (max-width: 760px) { .topbar-inner { align-items: stretch; flex-direction: column; } .nav { justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; } .status-strip { flex-wrap: wrap; } .summary, .layout, .ai-grid, .split { grid-template-columns: 1fr; } .report-row { grid-template-columns: 1fr; } .thumb { width: 100%; height: 180px; } }
   </style>
 </head>
 <body>
@@ -97,6 +101,13 @@
         <img src="/rodnam-logo.svg" alt="rodnam" />
         <span><span class="brand-title">rodnam</span><span class="brand-subtitle">Admin Dashboard</span></span>
       </a>
+      <nav class="nav" aria-label="Dashboard sections">
+        <button class="nav-button active" type="button" data-view-button="overview">Overview</button>
+        <button class="nav-button" type="button" data-view-button="reports">Reports</button>
+        <button class="nav-button" type="button" data-view-button="ai">AI Review</button>
+        <button class="nav-button" type="button" data-view-button="drones">Drones</button>
+        <button class="nav-button" type="button" data-view-button="settings">Settings</button>
+      </nav>
       <div class="status-strip">
         <span class="pill"><span class="dot"></span>Users: <span id="headerUsers">-</span></span>
         <span class="pill">Reports: <span id="headerReports">0</span></span>
@@ -113,14 +124,18 @@
       <div class="sync"><span class="dot"></span><span id="syncText">Connecting...</span></div>
     </section>
     <section class="grid summary" id="summaryGrid"></section>
-    <section class="grid layout">
+    <section class="grid layout" id="overviewPanel" style="margin-top:16px">
       <section class="card" id="mapPanel"></section>
       <aside class="stack" id="sidePanel"></aside>
     </section>
     <section class="card" id="reportsPanel" style="margin-top:16px"></section>
+    <section class="grid ai-grid" style="margin-top:16px">
+      <section class="card ai-box" id="dronesPanel"><h2 class="card-title">Drone operations</h2><p class="card-subtitle">Open the existing drone console and keep drone captures grouped with flood reports.</p><a class="button" style="margin-top:14px" href="/drone/" target="_blank" rel="noreferrer">Open drone page</a></section>
+      <section class="card ai-box" id="settingsPanel"><h2 class="card-title">Settings</h2><p class="card-subtitle">Live endpoints: /api/reports, /api/dashboard/stats and /api/drones.</p><div class="soft-panel" style="margin-top:14px">Dashboard uses live database records only. Sample cases stay disabled.</div></section>
+    </section>
   </main>
   <script>
-    const state = { reports: [], stats: null, error: null, updatedAt: null };
+    const state = { reports: [], stats: null, drones: null, dronesError: null, error: null, updatedAt: null, view: "overview" };
     const markerPositions = [[38,52],[70,64],[54,42],[18,30],[62,26],[28,70]];
     const $ = (id) => document.getElementById(id);
     const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -157,9 +172,13 @@
 
     async function loadAll() {
       try {
-        const [reports, stats] = await Promise.all([fetchJson("/api/reports"), fetchJson("/api/dashboard/stats")]);
-        state.reports = reports.reports || [];
-        state.stats = stats.stats || null;
+        const [reports, stats, drones] = await Promise.allSettled([fetchJson("/api/reports"), fetchJson("/api/dashboard/stats"), fetchJson("/api/drones")]);
+        if (reports.status === "fulfilled") state.reports = reports.value.reports || [];
+        if (stats.status === "fulfilled") state.stats = stats.value.stats || null;
+        state.drones = drones.status === "fulfilled" ? drones.value : null;
+        state.dronesError = drones.status === "rejected" ? drones.reason.message || "Drone API unavailable." : null;
+        if (reports.status === "rejected") throw reports.reason;
+        if (stats.status === "rejected") throw stats.reason;
         state.updatedAt = new Date();
         state.error = null;
       } catch (error) {
@@ -214,8 +233,8 @@
       return '<article class="report-row"><div class="thumb">' + (report.imageUrl ? '<img src="' + report.imageUrl + '" alt="User flood report">' : "No image") + '</div><div><p class="muted">Report ID</p><b class="mono">' + escapeHtml(report.id).slice(0,8) + '</b></div><div><b>' + escapeHtml(report.reporterName) + '</b><p class="muted">' + escapeHtml(report.details || "No additional details") + '</p><a class="muted" href="' + mapsHref(report) + '" target="_blank" rel="noreferrer">Open location</a></div><div>' + waterMeter(report) + '</div><div><span class="tag ' + review.state + '">' + review.title + '</span><p class="muted">' + formatDate(report.createdAt) + '</p></div></article>';
     }
 
-    function renderReportsPanel() {
-      const reports = state.reports.slice(0, 8);
+    function renderReportsPanel(limit) {
+      const reports = typeof limit === "number" ? state.reports.slice(0, limit) : state.reports;
       $("reportsPanel").innerHTML = '<div class="card-head"><div><h2 class="card-title">Incoming reports</h2><p class="card-subtitle">Supabase data: user image, location and YOLO result.</p></div></div>' + (state.error ? '<div class="soft-panel" style="margin:16px;color:#be123c">' + escapeHtml(state.error) + '</div>' : "") + '<div class="report-list">' + (reports.length ? reports.map(reportRow).join("") : '<div class="empty">No dashboard records.</div>') + '</div>';
     }
 
@@ -225,6 +244,17 @@
       renderSidePanel();
       renderReportsPanel();
     }
+
+    function activateMenu(view) {
+      const targets = { overview: "overviewPanel", reports: "reportsPanel", ai: "sidePanel", drones: "dronesPanel", settings: "settingsPanel" };
+      document.querySelectorAll("[data-view-button]").forEach((button) => button.classList.toggle("active", button.dataset.viewButton === view));
+      const target = document.getElementById(targets[view] || "overviewPanel");
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    document.querySelectorAll("[data-view-button]").forEach((button) => {
+      button.addEventListener("click", () => activateMenu(button.dataset.viewButton));
+    });
 
     render();
     loadAll();
