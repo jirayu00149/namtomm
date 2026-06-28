@@ -14,6 +14,9 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "cf:build": "node scripts/cloudflare.mjs build",
     "yolo:install": "python -m pip install -r tools/yolo-water-service/requirements.txt",
+    "yolo:train": "python tools/yolo-water-service/train.py",
+    "yolo:train:quick": "python tools/yolo-water-service/train.py --epochs 20 --imgsz 416 --batch 1 --name flood_level_quick",
+    "yolo:train:smoke": "python tools/yolo-water-service/train.py --epochs 1 --imgsz 320 --batch 1 --fraction 0.01 --name flood_level_smoke --exist-ok --no-copy",
     "yolo:service": "python tools/yolo-water-service/server.py"
   },
   "dependencies": {

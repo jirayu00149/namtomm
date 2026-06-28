@@ -123,8 +123,11 @@ A local FastAPI service is included at `tools/yolo-water-service`. It receives t
 
 ```powershell
 npm run yolo:install
+npm run yolo:train
 npm run yolo:service
 ```
+
+`npm run yolo:train` expects the Roboflow YOLOv11 export in the app root (`data.yaml`, `train/`, `valid/`, `test/`). It copies the trained `best.pt` into `tools/yolo-water-service/models/flood_water_level.pt` automatically. On CPU-only machines, use `npm run yolo:train:quick` for a shorter run.
 
 Place the trained model at:
 

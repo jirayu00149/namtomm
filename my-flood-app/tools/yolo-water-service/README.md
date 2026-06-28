@@ -10,11 +10,33 @@ This service receives a user report image, runs an Ultralytics YOLO flood-water 
 npm run yolo:install
 ```
 
-2. Put your trained water/flood YOLO model here:
+2. Train or place the YOLO model.
+
+If `data.yaml`, `train/`, `valid/`, and `test/` from the Roboflow YOLOv11 export are in the app root, run:
+
+```powershell
+npm run yolo:train
+```
+
+The script trains with Ultralytics, finds `best.pt`, and copies it to:
 
 ```text
 tools/yolo-water-service/models/flood_water_level.pt
 ```
+
+For a CPU-only machine, use the smaller run first:
+
+```powershell
+npm run yolo:train:quick
+```
+
+For a short smoke test that does not replace the service model:
+
+```powershell
+npm run yolo:train:smoke
+```
+
+If you train on Roboflow, Colab, or another GPU machine, copy its `best.pt` to `tools/yolo-water-service/models/flood_water_level.pt` manually.
 
 3. Confirm `.env.local` contains:
 
@@ -32,13 +54,19 @@ WATER_REFERENCE_TOP_Y=0
 WATER_REFERENCE_BOTTOM_Y=720
 ```
 
-4. Run the service:
+4. Verify the local model exists:
+
+```powershell
+Test-Path tools/yolo-water-service/models/flood_water_level.pt
+```
+
+5. Run the service:
 
 ```powershell
 npm run yolo:service
 ```
 
-5. Run the Next app in another terminal. When a user submits a report image, `/api/reports` sends the image to this service and stores `yolo_depth_cm`, `yolo_risk`, `yolo_confidence`, and `yolo_labels`.
+6. Run the Next app in another terminal. When a user submits a report image, `/api/reports` sends the image to this service and stores `yolo_depth_cm`, `yolo_risk`, `yolo_confidence`, and `yolo_labels`.
 
 ## Calibration
 
