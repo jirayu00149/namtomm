@@ -20,8 +20,8 @@
       --card: #ffffff;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    a, button { font: inherit; }
+    body { margin: 0; background: var(--soft); color: var(--ink); font-family: "Sarabun", "Noto Sans Thai", "Leelawadee UI", Tahoma, Arial, sans-serif; }
+    a, button, input { font: inherit; }
     .topbar { position: sticky; top: 0; z-index: 10; background: var(--navy); color: white; box-shadow: 0 2px 12px rgba(15, 23, 42, .16); }
     .topbar-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; }
     .brand { display: inline-flex; align-items: center; gap: 12px; color: white; text-decoration: none; }
@@ -131,11 +131,12 @@
       <aside class="stack" id="sidePanel"></aside>
     </section>
     <section class="card dash-view" data-view="reports" id="reportsPanel" style="margin-top:16px" hidden></section>
-    <section class="dash-view" data-view="ai" id="aiView" style="margin-top:16px" hidden>
+    <section class="grid ai-grid dash-view" data-view="ai" id="aiView" style="margin-top:16px" hidden>
+      <section class="card ai-box" id="aiUploadPanel"><h2 class="card-title">Analyze water level from images</h2><p class="card-subtitle">Upload one or more flood photos. The dashboard sends each image to YOLO and shows the measured water height per file.</p><div class="soft-panel" style="margin-top:14px"><input id="aiImageInput" type="file" accept="image/*" multiple /><button class="button" id="aiAnalyzeButton" type="button" style="margin-top:12px">Analyze selected images</button></div><div class="report-list" id="aiAnalyzeResults"></div></section>
       <aside class="stack" id="aiPanel"></aside>
     </section>
     <section class="grid ai-grid dash-view" data-view="drones" style="margin-top:16px" hidden>
-      <section class="card ai-box" id="dronesPanel"><h2 class="card-title">Drone operations</h2><p class="card-subtitle">Open the existing drone console and keep drone captures grouped with flood reports.</p><a class="button" style="margin-top:14px" href="/drone/" target="_blank" rel="noreferrer">Open drone page</a></section>
+      <section class="card ai-box" id="dronesPanel"><h2 class="card-title">Drone operations</h2><p class="card-subtitle">Open the existing drone console and keep drone captures grouped with flood reports.</p><a class="button" style="margin-top:14px" href="/drone" target="_blank" rel="noreferrer">Open drone page</a></section>
     </section>
     <section class="grid ai-grid dash-view" data-view="settings" style="margin-top:16px" hidden>
       <section class="card ai-box" id="settingsPanel"><h2 class="card-title">Settings</h2><p class="card-subtitle">Live endpoints: /api/reports, /api/dashboard/stats and /api/drones.</p><div class="soft-panel" style="margin-top:14px">Dashboard uses live database records only. Sample cases stay disabled.</div></section>
@@ -248,6 +249,42 @@
       $("reportsPanel").innerHTML = '<div class="card-head"><div><h2 class="card-title">Incoming reports</h2><p class="card-subtitle">Supabase data: user image, location and YOLO result.</p></div></div>' + (state.error ? '<div class="soft-panel" style="margin:16px;color:#be123c">' + escapeHtml(state.error) + '</div>' : "") + '<div class="report-list">' + (reports.length ? reports.map(reportRow).join("") : '<div class="empty">No dashboard records.</div>') + '</div>';
     }
 
+
+    function renderAnalyzeResult(item, previewUrl) {
+      const yolo = item && item.yolo ? item.yolo : {};
+      const depth = Number.isFinite(Number(yolo.depthCm)) ? Number(yolo.depthCm).toFixed(1) + " cm" : "pending";
+      const risk = riskClass(yolo.risk);
+      const labels = Array.isArray(yolo.labels) && yolo.labels.length ? yolo.labels.slice(0, 5).map(escapeHtml).join(", ") : "labels pending";
+      const message = yolo.message ? '<p class="muted">' + escapeHtml(yolo.message) + '</p>' : "";
+      return '<article class="report-row"><div class="thumb">' + (previewUrl ? '<img src="' + previewUrl + '" alt="Uploaded flood image">' : "No image") + '</div><div><p class="muted">Image</p><b>' + escapeHtml(item.fileName || "image") + '</b></div><div><span class="tag ' + risk + '">' + escapeHtml(yolo.risk || "pending") + '</span><p class="muted">' + labels + '</p>' + message + '</div><div>' + waterMeter({ depthCm: yolo.depthCm, risk: yolo.risk }) + '</div><div><b>' + depth + '</b><p class="muted">' + confidenceText(yolo.confidence) + '</p></div></article>';
+    }
+
+    async function analyzeSelectedImages() {
+      const input = $("aiImageInput");
+      const button = $("aiAnalyzeButton");
+      const results = $("aiAnalyzeResults");
+      const files = input && input.files ? Array.from(input.files).slice(0, 8) : [];
+      if (!results) return;
+      if (!files.length) {
+        results.innerHTML = '<div class="empty">Choose at least one image first.</div>';
+        return;
+      }
+      const previews = files.map((file) => URL.createObjectURL(file));
+      results.innerHTML = files.map((file, index) => '<article class="report-row"><div class="thumb"><img src="' + previews[index] + '" alt="Pending image"></div><div><p class="muted">Image</p><b>' + escapeHtml(file.name || "image") + '</b></div><div class="muted">Sending to YOLO...</div><div>' + waterMeter({ depthCm: null, risk: "pending" }) + '</div><div><span class="tag pending">pending</span></div></article>').join("");
+      if (button) button.disabled = true;
+      try {
+        const formData = new FormData();
+        files.forEach((file) => formData.append("images", file, file.name || "image.jpg"));
+        const response = await fetch("/api/yolo/analyze", { method: "POST", body: formData });
+        const payload = await response.json();
+        if (!response.ok || payload.ok === false) throw new Error(payload.message || "YOLO analysis failed.");
+        results.innerHTML = (payload.results || []).map((item, index) => renderAnalyzeResult(item, previews[index])).join("") || '<div class="empty">No analysis result returned.</div>';
+      } catch (error) {
+        results.innerHTML = '<div class="soft-panel" style="margin-top:14px;color:#be123c">' + escapeHtml(error.message || "Failed to analyze images.") + '</div>';
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
     function render() {
       renderSummary();
       renderMapPanel();
@@ -270,6 +307,9 @@
     document.querySelectorAll("[data-view-button]").forEach((button) => {
       button.addEventListener("click", () => activateMenu(button.dataset.viewButton));
     });
+
+    const aiAnalyzeButton = $("aiAnalyzeButton");
+    if (aiAnalyzeButton) aiAnalyzeButton.addEventListener("click", analyzeSelectedImages);
 
     render();
     loadAll();
