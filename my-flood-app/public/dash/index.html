@@ -50,6 +50,8 @@
     .summary-value { margin-top: 10px; font-size: 34px; line-height: 1; font-weight: 850; letter-spacing: 0; font-variant-numeric: tabular-nums; }
     .summary-unit { color: #94a3b8; font-size: 13px; font-weight: 500; }
     .layout { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; margin-top: 0; }
+    .dash-view { scroll-margin-top: 92px; }
+    .dash-view[hidden] { display: none !important; }
     .card-head { padding: 16px; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .card-title { font-size: 18px; font-weight: 850; }
     .card-subtitle { margin-top: 5px; color: var(--muted); font-size: 14px; line-height: 1.55; }
@@ -124,13 +126,18 @@
       <div class="sync"><span class="dot"></span><span id="syncText">Connecting...</span></div>
     </section>
     <section class="grid summary" id="summaryGrid"></section>
-    <section class="grid layout" id="overviewPanel" style="margin-top:16px">
+    <section class="grid layout dash-view" data-view="overview" id="overviewPanel" style="margin-top:16px">
       <section class="card" id="mapPanel"></section>
       <aside class="stack" id="sidePanel"></aside>
     </section>
-    <section class="card" id="reportsPanel" style="margin-top:16px"></section>
-    <section class="grid ai-grid" style="margin-top:16px">
+    <section class="card dash-view" data-view="reports" id="reportsPanel" style="margin-top:16px" hidden></section>
+    <section class="dash-view" data-view="ai" id="aiView" style="margin-top:16px" hidden>
+      <aside class="stack" id="aiPanel"></aside>
+    </section>
+    <section class="grid ai-grid dash-view" data-view="drones" style="margin-top:16px" hidden>
       <section class="card ai-box" id="dronesPanel"><h2 class="card-title">Drone operations</h2><p class="card-subtitle">Open the existing drone console and keep drone captures grouped with flood reports.</p><a class="button" style="margin-top:14px" href="/drone/" target="_blank" rel="noreferrer">Open drone page</a></section>
+    </section>
+    <section class="grid ai-grid dash-view" data-view="settings" style="margin-top:16px" hidden>
       <section class="card ai-box" id="settingsPanel"><h2 class="card-title">Settings</h2><p class="card-subtitle">Live endpoints: /api/reports, /api/dashboard/stats and /api/drones.</p><div class="soft-panel" style="margin-top:14px">Dashboard uses live database records only. Sample cases stay disabled.</div></section>
     </section>
   </main>
@@ -220,7 +227,10 @@
       const review = latest ? reviewFor(latest) : null;
       const detected = state.reports.filter((report) => reviewFor(report).state === "detected").length;
       const pending = state.reports.filter((report) => reviewFor(report).state === "review").length;
-      $("sidePanel").innerHTML = '<section class="card ai-box"><div class="card-head" style="padding:0 0 14px;border-bottom:0"><div><h2 class="card-title">User photo AI review</h2><p class="card-subtitle">YOLO screens each photo submitted by users.</p></div><span class="tag pending">AI</span></div><div class="soft-panel"><div class="split"><span class="metric">Detected ' + detected + '</span><span class="metric">Review ' + pending + '</span></div></div>' + (latest ? '<article class="card" style="margin-top:14px;overflow:hidden"><div class="thumb" style="width:100%;height:190px;border-radius:0">' + (latest.imageUrl ? '<img src="' + latest.imageUrl + '" alt="Latest user report">' : "No image") + '</div><div style="padding:14px"><span class="tag ' + review.state + '">' + review.title + '</span><p style="margin-top:10px"><b>' + riskText(latest) + '</b></p>' + waterMeter(latest) + '<p class="muted" style="margin-top:10px">' + confidenceText(latest.confidence) + '</p></div></article>' : '<div class="empty">No user photos have reached AI review yet.</div>') + '</section><section class="card ai-box"><h2 class="card-title">Priority response queue</h2>' + renderQueue() + '</section>';
+      const sideHtml = '<section class="card ai-box"><div class="card-head" style="padding:0 0 14px;border-bottom:0"><div><h2 class="card-title">User photo AI review</h2><p class="card-subtitle">YOLO screens each photo submitted by users.</p></div><span class="tag pending">AI</span></div><div class="soft-panel"><div class="split"><span class="metric">Detected ' + detected + '</span><span class="metric">Review ' + pending + '</span></div></div>' + (latest ? '<article class="card" style="margin-top:14px;overflow:hidden"><div class="thumb" style="width:100%;height:190px;border-radius:0">' + (latest.imageUrl ? '<img src="' + latest.imageUrl + '" alt="Latest user report">' : "No image") + '</div><div style="padding:14px"><span class="tag ' + review.state + '">' + review.title + '</span><p style="margin-top:10px"><b>' + riskText(latest) + '</b></p>' + waterMeter(latest) + '<p class="muted" style="margin-top:10px">' + confidenceText(latest.confidence) + '</p></div></article>' : '<div class="empty">No user photos have reached AI review yet.</div>') + '</section><section class="card ai-box"><h2 class="card-title">Priority response queue</h2>' + renderQueue() + '</section>';
+      $("sidePanel").innerHTML = sideHtml;
+      const aiPanel = $("aiPanel");
+      if (aiPanel) aiPanel.innerHTML = sideHtml;
     }
 
     function renderQueue() {
@@ -246,10 +256,15 @@
     }
 
     function activateMenu(view) {
-      const targets = { overview: "overviewPanel", reports: "reportsPanel", ai: "sidePanel", drones: "dronesPanel", settings: "settingsPanel" };
-      document.querySelectorAll("[data-view-button]").forEach((button) => button.classList.toggle("active", button.dataset.viewButton === view));
-      const target = document.getElementById(targets[view] || "overviewPanel");
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      const selected = ["overview", "reports", "ai", "drones", "settings"].includes(view) ? view : "overview";
+      state.view = selected;
+      document.querySelectorAll(".dash-view").forEach((panel) => {
+        panel.hidden = panel.dataset.view !== selected;
+      });
+      document.querySelectorAll("[data-view-button]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.viewButton === selected);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     document.querySelectorAll("[data-view-button]").forEach((button) => {
