@@ -25,3 +25,6 @@ my-flood-app/README.dataset.txt
 my-flood-app/README.roboflow.txt
 my-flood-app/runs/
 my-flood-app/yolo*.pt
+# Local Cloudflare quick tunnel binary/logs
+.cloudflared/
+tools/cloudflared.exe
