@@ -1,7 +1,9 @@
 import { getSupabaseAdmin, getSupabaseConfigState } from "@/lib/supabase/admin";
 import { priorityFromWaterRisk, type YoloWaterLevelResult } from "@/lib/ai/yolo-water-level";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const FLOOD_IMAGE_BUCKET = "flood-images";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type ReportPriority = "critical" | "warning" | "normal";
 export type ReportStatus = "submitted" | "reviewing" | "assigned" | "resolved";
@@ -53,6 +55,25 @@ type CreateFloodReportInput = {
 
 function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "flood-image.jpg";
+}
+
+function normalizeUserId(userId: string | null) {
+  const candidate = userId?.trim();
+  return candidate && UUID_PATTERN.test(candidate) ? candidate : null;
+}
+
+async function resolveExistingUserId(supabase: SupabaseClient, userId: string | null) {
+  const candidate = normalizeUserId(userId);
+  if (!candidate) {
+    return null;
+  }
+
+  const { data, error } = await supabase.auth.admin.getUserById(candidate);
+  if (error || !data.user) {
+    return null;
+  }
+
+  return data.user.id;
 }
 
 function toReport(row: FloodReportRow, imageUrl: string | null = null): FloodReport {
@@ -128,7 +149,8 @@ export async function createFloodReport(input: CreateFloodReportInput) {
     return { configured: false, report: null, config };
   }
 
-  const owner = input.userId || "anonymous";
+  const verifiedUserId = await resolveExistingUserId(supabase, input.userId);
+  const owner = verifiedUserId || "anonymous";
   const imagePath = `reports/${owner}/${Date.now()}-${crypto.randomUUID()}-${sanitizeFileName(input.image.name)}`;
   const imageBuffer = Buffer.from(await input.image.arrayBuffer());
 
@@ -148,7 +170,7 @@ export async function createFloodReport(input: CreateFloodReportInput) {
   const { data, error } = await supabase
     .from("flood_reports")
     .insert({
-      user_id: input.userId,
+      user_id: verifiedUserId,
       reporter_name: input.reporterName,
       image_path: imagePath,
       lat: input.lat,
