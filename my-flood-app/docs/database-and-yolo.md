@@ -137,6 +137,9 @@ The report API stores the returned values in `public.flood_reports.yolo_depth_cm
 For real centimeter measurements, calibrate the camera/reference span:
 
 ```env
+WATER_LEVEL_CLASS_STEP_CM=10
+WATER_LEVEL_CLASS_BASE_CM=0
+YOLO_WATER_LABELS=water,flood,flooding,flood-water,flood_water,waterline,water_line,level-
 YOLO_REFERENCE_LABELS=utility_pole,electric_pole,power_pole,pole,water_level_gauge,water_gauge,staff_gauge,gauge_board,level_staff,water_staff,flood_gauge,ruler,staff,gauge,reference_marker,marker
 WATER_REFERENCE_HEIGHT_CM=900
 WATER_GAUGE_REFERENCE_HEIGHT_CM=200
@@ -144,7 +147,7 @@ WATER_REFERENCE_TOP_Y=0
 WATER_REFERENCE_BOTTOM_Y=720
 ```
 
-For pole-based measurement, keep `WATER_REFERENCE_HEIGHT_CM=900` and train/map a reference label such as `utility_pole`, `electric_pole`, `power_pole`, or `pole`. For a water-level staff/gauge, train/map labels such as `water_level_gauge`, `staff_gauge`, or `gauge_board`; the service will use `WATER_GAUGE_REFERENCE_HEIGHT_CM` for that reference. If you deploy the YOLO service to another machine, set `YOLO_API_URL` to that public HTTPS endpoint and upload the same value as a Cloudflare Worker secret.
+For pole-based measurement, keep `WATER_REFERENCE_HEIGHT_CM=900` and train/map a reference label such as `utility_pole`, `electric_pole`, `power_pole`, or `pole`. For a water-level staff/gauge, train/map labels such as `water_level_gauge`, `staff_gauge`, or `gauge_board`; the service will use `WATER_GAUGE_REFERENCE_HEIGHT_CM` for that reference. For Roboflow classes like `level-1` through `level-12`, the service will compute depth as `WATER_LEVEL_CLASS_BASE_CM + level * WATER_LEVEL_CLASS_STEP_CM`. If you deploy the YOLO service to another machine, set `YOLO_API_URL` to that public HTTPS endpoint and upload the same value as a Cloudflare Worker secret.
 
 ## 6. Verify before push
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -21,7 +22,7 @@ from ultralytics import YOLO
 app = FastAPI(title="rodnam YOLO water-level service", version="1.0.0")
 
 DEFAULT_MODEL = Path(__file__).resolve().parent / "models" / "flood_water_level.pt"
-DEFAULT_WATER_LABELS = ["water", "flood", "flood-water", "flood_water", "waterline", "water_line"]
+DEFAULT_WATER_LABELS = ["water", "flood", "flooding", "flood-water", "flood_water", "waterline", "water_line", "level-"]
 DEFAULT_POLE_REFERENCE_LABELS = ["utility_pole", "electric_pole", "power_pole", "pole"]
 DEFAULT_GAUGE_REFERENCE_LABELS = [
     "water_level_gauge",
@@ -40,6 +41,8 @@ DEFAULT_GAUGE_REFERENCE_LABELS = [
 DEFAULT_REFERENCE_LABELS = DEFAULT_POLE_REFERENCE_LABELS + DEFAULT_GAUGE_REFERENCE_LABELS
 DEFAULT_REFERENCE_HEIGHT_CM = 900.0
 DEFAULT_GAUGE_REFERENCE_HEIGHT_CM = 200.0
+DEFAULT_LEVEL_CLASS_STEP_CM = 10.0
+DEFAULT_LEVEL_CLASS_BASE_CM = 0.0
 
 
 def load_env_file() -> None:
@@ -218,6 +221,27 @@ def is_gauge_reference(detection: Optional[Dict[str, Any]]) -> bool:
     return any(label.lower() in class_name for label in gauge_reference_labels())
 
 
+def level_index_from_label(label: str) -> Optional[int]:
+    match = re.search(r"(?:^|[^a-z0-9])level[-_ ]?(\d+)(?:$|[^a-z0-9])", label.lower())
+    return int(match.group(1)) if match else None
+
+
+def best_level_detection(detections: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    level_detections = [item for item in detections if level_index_from_label(str(item.get("class_name", ""))) is not None]
+    if not level_detections:
+        return None
+    return max(level_detections, key=lambda item: float(item.get("confidence", 0.0)))
+
+
+def depth_from_level_detection(detection: Optional[Dict[str, Any]]) -> Optional[float]:
+    level_index = level_index_from_label(str(detection.get("class_name", ""))) if detection is not None else None
+    if level_index is None:
+        return None
+    step_cm = env_float("WATER_LEVEL_CLASS_STEP_CM", DEFAULT_LEVEL_CLASS_STEP_CM)
+    base_cm = env_float("WATER_LEVEL_CLASS_BASE_CM", DEFAULT_LEVEL_CLASS_BASE_CM)
+    return base_cm + (level_index * step_cm)
+
+
 def estimate_level(
     detections: List[Dict[str, Any]],
     top_y: float,
@@ -248,6 +272,8 @@ def health() -> Dict[str, Any]:
         "gaugeReferenceLabels": gauge_reference_labels(),
         "referenceHeightCm": env_float("WATER_REFERENCE_HEIGHT_CM", DEFAULT_REFERENCE_HEIGHT_CM),
         "gaugeReferenceHeightCm": env_float("WATER_GAUGE_REFERENCE_HEIGHT_CM", DEFAULT_GAUGE_REFERENCE_HEIGHT_CM),
+        "levelClassStepCm": env_float("WATER_LEVEL_CLASS_STEP_CM", DEFAULT_LEVEL_CLASS_STEP_CM),
+        "levelClassBaseCm": env_float("WATER_LEVEL_CLASS_BASE_CM", DEFAULT_LEVEL_CLASS_BASE_CM),
     }
 
 
@@ -299,6 +325,17 @@ async def detect_water_level(
     elif not os.environ.get("WATER_REFERENCE_TOP_Y") and not os.environ.get("WATER_REFERENCE_BOTTOM_Y"):
         reference_source = "image_height"
     waterline_y, level_cm, level_percent, confidence = estimate_level(detections, top_y, bottom_y, height_cm)
+    level_detection = best_level_detection(detections)
+    level_class_depth_cm = depth_from_level_detection(level_detection)
+    depth_source = "geometry"
+    if level_class_depth_cm is not None:
+        level_cm = level_class_depth_cm
+        level_percent = clamp((level_cm / max(1.0, height_cm)) * 100.0, 0.0, 100.0)
+        confidence = max(confidence, float(level_detection.get("confidence", 0.0)) if level_detection is not None else 0.0)
+        waterline_y = float(level_detection.get("waterline_y", waterline_y or 0.0)) if waterline_y is None and level_detection is not None else waterline_y
+        depth_source = "level_class"
+    elif level_cm is None:
+        depth_source = "none"
     risk = risk_from_level(level_cm, alert_cm, critical_cm)
 
     return {
@@ -321,6 +358,8 @@ async def detect_water_level(
         "reference_bottom_y": bottom_y,
         "reference_source": reference_source,
         "reference_kind": reference_kind,
+        "depth_source": depth_source,
+        "level_class": level_detection.get("class_name") if level_detection is not None else None,
         "message": "Water level measured by Ultralytics YOLO." if level_cm is not None else "No flood-water detection found.",
     }
 

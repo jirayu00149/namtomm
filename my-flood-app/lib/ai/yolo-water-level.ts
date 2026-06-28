@@ -118,7 +118,7 @@ function normalizeRisk(value: unknown, depthCm: number | null, labels: string[] 
     return "safe";
   }
 
-  if (/(flood|water|waterline|water_line|inundation|road_flood)/i.test(labelText)) {
+  if (/(flood|flooding|water|waterline|water_line|inundation|road_flood|level[-_ ]?\d+)/i.test(labelText)) {
     return "watch";
   }
 
@@ -282,7 +282,28 @@ function matchDetection(detections: JsonRecord[], pattern: RegExp) {
     .filter((entry) => entry.box && pattern.test(entry.label));
 }
 
+function levelClassDepthFromDetections(detections: JsonRecord[]) {
+  const candidates = detections
+    .map((item) => ({ label: labelFromDetection(item) || "", confidence: confidenceFromDetection(item) ?? 0 }))
+    .map((item) => ({ ...item, match: item.label.match(/(?:^|[^a-z0-9])level[-_ ]?(\d+)(?:$|[^a-z0-9])/i) }))
+    .filter((item): item is { label: string; confidence: number; match: RegExpMatchArray } => item.match !== null)
+    .sort((a, b) => b.confidence - a.confidence);
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  const stepCm = toNumber(process.env.WATER_LEVEL_CLASS_STEP_CM) ?? 10;
+  const baseCm = toNumber(process.env.WATER_LEVEL_CLASS_BASE_CM) ?? 0;
+  return baseCm + Number(candidates[0].match[1]) * stepCm;
+}
+
 function calculateDepthFromDetections(data: YoloApiResponse, detections: JsonRecord[]) {
+  const levelClassDepth = levelClassDepthFromDetections(detections);
+  if (levelClassDepth !== null) {
+    return levelClassDepth;
+  }
+
   const directDetectionDepth = detections
     .map((item) => firstNumber(item, depthKeys))
     .find((value) => value !== null);
@@ -294,8 +315,8 @@ function calculateDepthFromDetections(data: YoloApiResponse, detections: JsonRec
   const explicitScale = firstNumber(data, scaleKeys);
   const referenceHeightCm = firstNumber(data, referenceHeightKeys);
   const maxDepthCm = firstNumber(data, maxDepthKeys);
-  const waterline = matchDetection(detections, /(waterline|water_line|water-level|water_level|surface|flood_line)/i)[0];
-  const waterRegion = matchDetection(detections, /(flood|water|inundation)/i)[0];
+  const waterline = matchDetection(detections, /(waterline|water_line|water-level|water_level|surface|flood_line|level[-_ ]?\d+)/i)[0];
+  const waterRegion = matchDetection(detections, /(flood|flooding|water|inundation|level[-_ ]?\d+)/i)[0];
   const reference = matchDetection(detections, /(gauge|water_gauge|water_level_gauge|gauge_board|ruler|scale|staff|level_staff|water_staff|reference|marker|meter|pole|utility_pole|electric_pole|power_pole)/i)[0];
   const waterBox = waterline?.box || waterRegion?.box || null;
 

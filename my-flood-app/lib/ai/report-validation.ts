@@ -7,7 +7,7 @@ export type ReportValidationResult = {
   locationVerdict: "gps_verified" | "manual_location" | "weak_location" | "outside_service_area";
 };
 
-const floodPattern = /(flood|flooding|water|waterline|inundation|road_flood)/i;
+const floodPattern = /(flood|flooding|water|waterline|inundation|road_flood|level[-_ ]?\d+)/i;
 const negativePattern = /(dry|no[_ -]?flood|not[_ -]?flood|normal|safe)/i;
 
 function inThailand(lat: number, lng: number) {

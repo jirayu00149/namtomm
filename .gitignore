@@ -10,3 +10,16 @@ my-flood-app/out/
 my-flood-app/build/
 my-flood-app/.env*
 !my-flood-app/.env.example
+# Roboflow dataset exports are local training assets, not app source.
+train/
+valid/
+test/
+data.yaml
+README.dataset.txt
+README.roboflow.txt
+my-flood-app/train/
+my-flood-app/valid/
+my-flood-app/test/
+my-flood-app/data.yaml
+my-flood-app/README.dataset.txt
+my-flood-app/README.roboflow.txt
