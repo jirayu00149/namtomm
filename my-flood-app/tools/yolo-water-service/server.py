@@ -22,8 +22,24 @@ app = FastAPI(title="rodnam YOLO water-level service", version="1.0.0")
 
 DEFAULT_MODEL = Path(__file__).resolve().parent / "models" / "flood_water_level.pt"
 DEFAULT_WATER_LABELS = ["water", "flood", "flood-water", "flood_water", "waterline", "water_line"]
-DEFAULT_REFERENCE_LABELS = ["utility_pole", "electric_pole", "power_pole", "pole", "reference_marker", "gauge", "marker"]
+DEFAULT_POLE_REFERENCE_LABELS = ["utility_pole", "electric_pole", "power_pole", "pole"]
+DEFAULT_GAUGE_REFERENCE_LABELS = [
+    "water_level_gauge",
+    "water_gauge",
+    "staff_gauge",
+    "gauge_board",
+    "level_staff",
+    "water_staff",
+    "flood_gauge",
+    "ruler",
+    "staff",
+    "gauge",
+    "reference_marker",
+    "marker",
+]
+DEFAULT_REFERENCE_LABELS = DEFAULT_POLE_REFERENCE_LABELS + DEFAULT_GAUGE_REFERENCE_LABELS
 DEFAULT_REFERENCE_HEIGHT_CM = 900.0
+DEFAULT_GAUGE_REFERENCE_HEIGHT_CM = 200.0
 
 
 def load_env_file() -> None:
@@ -86,6 +102,10 @@ def wanted_labels() -> List[str]:
 
 def reference_labels() -> List[str]:
     return parse_csv(os.environ.get("YOLO_REFERENCE_LABELS", "")) or DEFAULT_REFERENCE_LABELS
+
+
+def gauge_reference_labels() -> List[str]:
+    return parse_csv(os.environ.get("YOLO_GAUGE_REFERENCE_LABELS", "")) or DEFAULT_GAUGE_REFERENCE_LABELS
 
 
 def model_path() -> Path:
@@ -191,6 +211,13 @@ def best_detection(detections: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]
     return max(detections, key=lambda item: float(item.get("area", 0.0)) * max(0.01, float(item.get("confidence", 0.0))))
 
 
+def is_gauge_reference(detection: Optional[Dict[str, Any]]) -> bool:
+    if detection is None:
+        return False
+    class_name = str(detection.get("class_name", "")).lower()
+    return any(label.lower() in class_name for label in gauge_reference_labels())
+
+
 def estimate_level(
     detections: List[Dict[str, Any]],
     top_y: float,
@@ -218,7 +245,9 @@ def health() -> Dict[str, Any]:
         "modelPath": str(path),
         "waterLabels": wanted_labels(),
         "referenceLabels": reference_labels(),
+        "gaugeReferenceLabels": gauge_reference_labels(),
         "referenceHeightCm": env_float("WATER_REFERENCE_HEIGHT_CM", DEFAULT_REFERENCE_HEIGHT_CM),
+        "gaugeReferenceHeightCm": env_float("WATER_GAUGE_REFERENCE_HEIGHT_CM", DEFAULT_GAUGE_REFERENCE_HEIGHT_CM),
     }
 
 
@@ -248,6 +277,7 @@ async def detect_water_level(
     top_y = reference_top_y if reference_top_y is not None else env_float("WATER_REFERENCE_TOP_Y", 0.0)
     bottom_y = reference_bottom_y if reference_bottom_y is not None else env_float("WATER_REFERENCE_BOTTOM_Y", float(height))
     height_cm = reference_height_cm if reference_height_cm is not None else env_float("WATER_REFERENCE_HEIGHT_CM", DEFAULT_REFERENCE_HEIGHT_CM)
+    reference_kind = "form" if reference_height_cm is not None else "default"
     alert_cm = env_float("WATER_ALERT_CM", 80.0)
     critical_cm = env_float("WATER_CRITICAL_CM", 120.0)
 
@@ -260,6 +290,12 @@ async def detect_water_level(
         top_y = float(reference["y"])
         bottom_y = float(reference["y"]) + float(reference["height"])
         reference_source = str(reference["class_name"])
+        if is_gauge_reference(reference):
+            reference_kind = "water_gauge"
+            if reference_height_cm is None:
+                height_cm = env_float("WATER_GAUGE_REFERENCE_HEIGHT_CM", DEFAULT_GAUGE_REFERENCE_HEIGHT_CM)
+        elif reference_height_cm is None:
+            reference_kind = "pole_or_marker"
     elif not os.environ.get("WATER_REFERENCE_TOP_Y") and not os.environ.get("WATER_REFERENCE_BOTTOM_Y"):
         reference_source = "image_height"
     waterline_y, level_cm, level_percent, confidence = estimate_level(detections, top_y, bottom_y, height_cm)
@@ -284,6 +320,7 @@ async def detect_water_level(
         "reference_top_y": top_y,
         "reference_bottom_y": bottom_y,
         "reference_source": reference_source,
+        "reference_kind": reference_kind,
         "message": "Water level measured by Ultralytics YOLO." if level_cm is not None else "No flood-water detection found.",
     }
 

@@ -49,7 +49,7 @@ const depthKeys = [
 ];
 
 const scaleKeys = ["scaleCmPerPx", "scale_cm_per_px", "cm_per_px", "centimeters_per_pixel"];
-const referenceHeightKeys = ["referenceHeightCm", "reference_height_cm", "gaugeHeightCm", "gauge_height_cm", "markerHeightCm", "marker_height_cm"];
+const referenceHeightKeys = ["referenceHeightCm", "reference_height_cm", "gaugeReferenceHeightCm", "gauge_reference_height_cm", "gaugeHeightCm", "gauge_height_cm", "markerHeightCm", "marker_height_cm"];
 const maxDepthKeys = ["maxDepthCm", "max_depth_cm", "cameraMaxDepthCm", "camera_max_depth_cm"];
 const imageHeightKeys = ["imageHeight", "image_height", "height", "original_height", "frame_height"];
 
@@ -296,7 +296,7 @@ function calculateDepthFromDetections(data: YoloApiResponse, detections: JsonRec
   const maxDepthCm = firstNumber(data, maxDepthKeys);
   const waterline = matchDetection(detections, /(waterline|water_line|water-level|water_level|surface|flood_line)/i)[0];
   const waterRegion = matchDetection(detections, /(flood|water|inundation)/i)[0];
-  const reference = matchDetection(detections, /(gauge|ruler|scale|staff|reference|marker|meter|pole|utility_pole|electric_pole|power_pole)/i)[0];
+  const reference = matchDetection(detections, /(gauge|water_gauge|water_level_gauge|gauge_board|ruler|scale|staff|level_staff|water_staff|reference|marker|meter|pole|utility_pole|electric_pole|power_pole)/i)[0];
   const waterBox = waterline?.box || waterRegion?.box || null;
 
   if (!waterBox) {
