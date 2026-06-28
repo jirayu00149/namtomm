@@ -22,7 +22,8 @@ tools/yolo-water-service/models/flood_water_level.pt
 YOLO_API_URL=http://127.0.0.1:8010/detect-water-level
 YOLO_MODEL_PATH=tools/yolo-water-service/models/flood_water_level.pt
 YOLO_CONF=0.25
-WATER_REFERENCE_HEIGHT_CM=200
+YOLO_REFERENCE_LABELS=utility_pole,electric_pole,power_pole,pole,reference_marker,gauge,marker
+WATER_REFERENCE_HEIGHT_CM=900
 WATER_REFERENCE_TOP_Y=0
 WATER_REFERENCE_BOTTOM_Y=720
 ```
@@ -37,7 +38,7 @@ npm run yolo:service
 
 ## Calibration
 
-`WATER_REFERENCE_TOP_Y`, `WATER_REFERENCE_BOTTOM_Y`, and `WATER_REFERENCE_HEIGHT_CM` define the measured vertical span in the image. For a real deployment, calibrate these values from a visible gauge, marker, bridge pillar, or camera-specific reference distance. Without calibration, the service can detect flood-water but the centimeter value is only an estimate.
+`WATER_REFERENCE_TOP_Y`, `WATER_REFERENCE_BOTTOM_Y`, and `WATER_REFERENCE_HEIGHT_CM` define the measured vertical span in the image. The default reference height is 900 cm so a detected utility/electric pole can be used as a 9 m scale reference. For a real deployment, calibrate these values from a visible gauge, marker, bridge pillar, utility pole, or camera-specific reference distance. Without calibration, the service can detect flood-water but the centimeter value is only an estimate.
 
 ## Response shape
 

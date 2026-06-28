@@ -137,12 +137,13 @@ The report API stores the returned values in `public.flood_reports.yolo_depth_cm
 For real centimeter measurements, calibrate the camera/reference span:
 
 ```env
-WATER_REFERENCE_HEIGHT_CM=200
+YOLO_REFERENCE_LABELS=utility_pole,electric_pole,power_pole,pole,reference_marker,gauge,marker
+WATER_REFERENCE_HEIGHT_CM=900
 WATER_REFERENCE_TOP_Y=0
 WATER_REFERENCE_BOTTOM_Y=720
 ```
 
-If you deploy the YOLO service to another machine, set `YOLO_API_URL` to that public HTTPS endpoint and upload the same value as a Cloudflare Worker secret.
+For pole-based measurement, keep `WATER_REFERENCE_HEIGHT_CM=900` and train/map a reference label such as `utility_pole`, `electric_pole`, `power_pole`, or `pole`. If you deploy the YOLO service to another machine, set `YOLO_API_URL` to that public HTTPS endpoint and upload the same value as a Cloudflare Worker secret.
 
 ## 6. Verify before push
 

@@ -21,7 +21,9 @@ from ultralytics import YOLO
 app = FastAPI(title="rodnam YOLO water-level service", version="1.0.0")
 
 DEFAULT_MODEL = Path(__file__).resolve().parent / "models" / "flood_water_level.pt"
-DEFAULT_LABELS = ["water", "flood", "flood-water", "waterline", "water_line"]
+DEFAULT_WATER_LABELS = ["water", "flood", "flood-water", "flood_water", "waterline", "water_line"]
+DEFAULT_REFERENCE_LABELS = ["utility_pole", "electric_pole", "power_pole", "pole", "reference_marker", "gauge", "marker"]
+DEFAULT_REFERENCE_HEIGHT_CM = 900.0
 
 
 def load_env_file() -> None:
@@ -79,7 +81,11 @@ def parse_classes(value: str) -> Optional[List[int]]:
 
 
 def wanted_labels() -> List[str]:
-    return parse_csv(os.environ.get("YOLO_WATER_LABELS", "")) or DEFAULT_LABELS
+    return parse_csv(os.environ.get("YOLO_WATER_LABELS", "")) or DEFAULT_WATER_LABELS
+
+
+def reference_labels() -> List[str]:
+    return parse_csv(os.environ.get("YOLO_REFERENCE_LABELS", "")) or DEFAULT_REFERENCE_LABELS
 
 
 def model_path() -> Path:
@@ -179,6 +185,12 @@ def detections_from_result(result: Any, labels: List[str], classes: Optional[Lis
     return detections
 
 
+def best_detection(detections: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not detections:
+        return None
+    return max(detections, key=lambda item: float(item.get("area", 0.0)) * max(0.01, float(item.get("confidence", 0.0))))
+
+
 def estimate_level(
     detections: List[Dict[str, Any]],
     top_y: float,
@@ -187,7 +199,9 @@ def estimate_level(
 ) -> Tuple[Optional[float], Optional[float], Optional[float], float]:
     if not detections:
         return None, None, None, 0.0
-    best = max(detections, key=lambda item: float(item.get("area", 0.0)) * max(0.01, float(item.get("confidence", 0.0))))
+    best = best_detection(detections)
+    if best is None:
+        return None, None, None, 0.0
     waterline_y = float(best["waterline_y"])
     span = max(1.0, bottom_y - top_y)
     level_percent = clamp(((bottom_y - waterline_y) / span) * 100.0, 0.0, 100.0)
@@ -202,7 +216,9 @@ def health() -> Dict[str, Any]:
     return {
         "ok": path.exists(),
         "modelPath": str(path),
-        "labels": wanted_labels(),
+        "waterLabels": wanted_labels(),
+        "referenceLabels": reference_labels(),
+        "referenceHeightCm": env_float("WATER_REFERENCE_HEIGHT_CM", DEFAULT_REFERENCE_HEIGHT_CM),
     }
 
 
@@ -223,17 +239,29 @@ async def detect_water_level(
     frame = decode_image(await image.read())
     height, width = frame.shape[:2]
     labels = wanted_labels()
+    ref_labels = reference_labels()
     classes = parse_classes(os.environ.get("YOLO_WATER_CLASSES", ""))
+    ref_classes = parse_classes(os.environ.get("YOLO_REFERENCE_CLASSES", ""))
+    predict_classes = sorted({*(classes or []), *(ref_classes or [])}) if classes is not None and ref_classes is not None else None
     conf = env_float("YOLO_CONF", 0.25)
     imgsz = env_int("YOLO_IMGSZ", 640)
     top_y = reference_top_y if reference_top_y is not None else env_float("WATER_REFERENCE_TOP_Y", 0.0)
     bottom_y = reference_bottom_y if reference_bottom_y is not None else env_float("WATER_REFERENCE_BOTTOM_Y", float(height))
-    height_cm = reference_height_cm if reference_height_cm is not None else env_float("WATER_REFERENCE_HEIGHT_CM", 200.0)
+    height_cm = reference_height_cm if reference_height_cm is not None else env_float("WATER_REFERENCE_HEIGHT_CM", DEFAULT_REFERENCE_HEIGHT_CM)
     alert_cm = env_float("WATER_ALERT_CM", 80.0)
     critical_cm = env_float("WATER_CRITICAL_CM", 120.0)
 
-    results = model.predict(frame, conf=conf, imgsz=imgsz, classes=classes, verbose=False)
+    results = model.predict(frame, conf=conf, imgsz=imgsz, classes=predict_classes, verbose=False)
     detections = detections_from_result(results[0], labels, classes) if results else []
+    reference_detections = detections_from_result(results[0], ref_labels, ref_classes) if results else []
+    reference = best_detection(reference_detections)
+    reference_source = "form" if reference_top_y is not None or reference_bottom_y is not None else "env"
+    if reference is not None and reference_top_y is None and reference_bottom_y is None:
+        top_y = float(reference["y"])
+        bottom_y = float(reference["y"]) + float(reference["height"])
+        reference_source = str(reference["class_name"])
+    elif not os.environ.get("WATER_REFERENCE_TOP_Y") and not os.environ.get("WATER_REFERENCE_BOTTOM_Y"):
+        reference_source = "image_height"
     waterline_y, level_cm, level_percent, confidence = estimate_level(detections, top_y, bottom_y, height_cm)
     risk = risk_from_level(level_cm, alert_cm, critical_cm)
 
@@ -245,8 +273,9 @@ async def detect_water_level(
         "risk": risk,
         "status": risk,
         "confidence": round(confidence, 4),
-        "labels": sorted({item["class_name"] for item in detections}),
+        "labels": sorted({item["class_name"] for item in [*detections, *reference_detections]}),
         "detections": detections,
+        "reference_detections": reference_detections,
         "waterline_y": round(waterline_y, 2) if waterline_y is not None else None,
         "level_percent": round(level_percent, 2) if level_percent is not None else None,
         "frame_width": width,
@@ -254,6 +283,7 @@ async def detect_water_level(
         "reference_height_cm": height_cm,
         "reference_top_y": top_y,
         "reference_bottom_y": bottom_y,
+        "reference_source": reference_source,
         "message": "Water level measured by Ultralytics YOLO." if level_cm is not None else "No flood-water detection found.",
     }
 
