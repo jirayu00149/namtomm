@@ -627,6 +627,22 @@
       .phone-frame { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
       .recent-cards { grid-template-columns: repeat(3, 128px); }
     }
+
+    /* User bottom tabs v7 */
+    .workflow-title { display: none; }
+    .user-tab-view[hidden] { display: none !important; }
+    .menu-panel { margin: 14px 16px 0; padding: 16px; }
+    .menu-panel h3 { margin: 0 0 12px; color: #0f2742; font-size: 19px; font-weight: 900; }
+    .menu-panel p { color: #64748b; line-height: 1.55; }
+    .shelter-list, .status-list { display: grid; gap: 10px; }
+    .shelter-item, .status-item { border: 1px solid #dbeafe; border-radius: 14px; background: #f8fbff; padding: 12px; }
+    .shelter-item strong, .status-item strong { display: block; color: #0f2742; font-size: 14px; }
+    .shelter-item span, .status-item span { display: block; margin-top: 4px; color: #64748b; font-size: 12px; line-height: 1.45; }
+    .shelter-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .mini-action { border: 0; border-radius: 10px; background: #0f7fd0; color: white; padding: 8px 10px; font-size: 12px; font-weight: 900; text-decoration: none; }
+    .mini-action.secondary { background: #e0f2fe; color: #0369a1; }
+    .bottom-tabs button { cursor: pointer; }
+    /* End User bottom tabs v7 */
   </style>
 </head>
 <body>
@@ -664,6 +680,7 @@
             <button class="app-icon-button" type="button" aria-label="แจ้งเตือน"><i class="fa-solid fa-bell"></i></button>
           </div>
 
+          <div class="user-tab-view" data-user-view="report">
           <section class="recent-strip" aria-label="รายงานล่าสุดของคุณ">
             <div class="section-kicker"><span>My Recent Reports</span><span>Status</span></div>
             <div class="recent-cards">
@@ -679,11 +696,6 @@
           </button>
 
           <section class="card report-workflow">
-            <div class="workflow-title">
-              <h3>Enhanced New Report</h3>
-              <span class="workflow-chip">YOLO enabled</span>
-            </div>
-
             <div class="step-block">
               <div class="step-label">1. Select urgency</div>
               <div class="urgency-grid" aria-label="เลือกระดับความเร่งด่วน">
@@ -702,7 +714,6 @@
                   <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileName(this)" />
                 </button>
                 <button class="evidence-option" type="button" onclick="document.getElementById('fileInput').click()"><i class="fa-regular fa-image"></i>Gallery</button>
-                <button class="evidence-option" type="button"><i class="fa-solid fa-microphone-lines"></i>Voice</button>
               </div>
             </div>
 
@@ -734,12 +745,38 @@
               </div>
             </div>
           </section>
+          </div>
+
+          <section class="card menu-panel user-tab-view" data-user-view="shelters" hidden>
+            <h3>ศูนย์พักพิงใกล้คุณ</h3>
+            <div class="shelter-list">
+              <article class="shelter-item">
+                <strong>ศูนย์พักพิงโรงเรียนบ้านพร้าว</strong>
+                <span>รองรับได้ 120 คน · เปิดรับตอนนี้ · ห่างจากพิกัดคุณประมาณ 1.8 กม.</span>
+                <div class="shelter-actions"><a class="mini-action" href="https://www.google.com/maps/search/?api=1&query=Ban+Phrao+Phatthalung" target="_blank" rel="noreferrer">เปิดแผนที่</a><button class="mini-action secondary" type="button">บันทึกไว้</button></div>
+              </article>
+              <article class="shelter-item">
+                <strong>ศูนย์ประสานงานเทศบาล</strong>
+                <span>มีอาหาร น้ำดื่ม และจุดชาร์จไฟ · เหมาะสำหรับครอบครัวและผู้สูงอายุ</span>
+                <div class="shelter-actions"><a class="mini-action" href="https://www.google.com/maps/search/?api=1&query=Phatthalung+Municipality" target="_blank" rel="noreferrer">เปิดแผนที่</a><button class="mini-action secondary" type="button">โทรประสาน</button></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="card menu-panel user-tab-view" data-user-view="status" hidden>
+            <h3>สถานะระบบและรายงาน</h3>
+            <div class="status-list">
+              <article class="status-item"><strong>GPS</strong><span id="statusGpsText">กำลังซิงก์ตำแหน่ง...</span></article>
+              <article class="status-item"><strong>YOLO AI</strong><span>พร้อมวิเคราะห์รูปน้ำท่วมเมื่อส่งรายงาน</span></article>
+              <article class="status-item"><strong>ฐานข้อมูล</strong><span>รายงานจะถูกบันทึกพร้อมรูปภาพ พิกัด และผู้ใช้</span></article>
+            </div>
+          </section>
         </div>
 
         <nav class="bottom-tabs" aria-label="เมนูหลัก">
-          <button class="active" type="button"><i class="fa-solid fa-flag"></i>Report</button>
-          <button type="button"><i class="fa-solid fa-house"></i>Shelters</button>
-          <button type="button"><i class="fa-regular fa-circle-check"></i>Status</button>
+          <button class="active" type="button" data-user-tab="report"><i class="fa-solid fa-flag"></i>Report</button>
+          <button type="button" data-user-tab="shelters"><i class="fa-solid fa-house"></i>Shelters</button>
+          <button type="button" data-user-tab="status"><i class="fa-regular fa-circle-check"></i>Status</button>
         </nav>
       </div>
     </aside>
@@ -909,6 +946,21 @@
       }
     }
 
+    function activateUserTab(view) {
+      const selected = ['report', 'shelters', 'status'].includes(view) ? view : 'report';
+      document.querySelectorAll('[data-user-view]').forEach((panel) => {
+        panel.hidden = panel.dataset.userView !== selected;
+      });
+      document.querySelectorAll('[data-user-tab]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.userTab === selected);
+      });
+      const scrollArea = document.querySelector('.phone-scroll');
+      if (scrollArea) scrollArea.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.querySelectorAll('[data-user-tab]').forEach((button) => {
+      button.addEventListener('click', () => activateUserTab(button.dataset.userTab));
+    });
     async function submitReport() {
       const fileInput = document.getElementById('fileInput');
       const detailsInput = document.getElementById('detailsInput');
