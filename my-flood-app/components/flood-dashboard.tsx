@@ -26,7 +26,7 @@ import {
 
 import { GooeyLoader } from "@/components/ui/loader-10";
 
-export type DashboardView = "overview" | "reports" | "drones" | "ai" | "settings";
+export type DashboardView = "overview" | "reports" | "drones" | "settings";
 
 type ReportPriority = "critical" | "warning" | "normal";
 type ReportStatus = "submitted" | "reviewing" | "assigned" | "resolved";
@@ -394,7 +394,6 @@ export function FloodDashboard({ activeView = "overview" }: FloodDashboardProps)
 
         {activeView === "drones" ? <DronesView /> : null}
 
-        {activeView === "ai" ? <AiView configured={configured} reports={reports} /> : null}
 
         {activeView === "settings" ? <SettingsView configured={configured} /> : null}
       </div>
@@ -589,8 +588,8 @@ function AiCard({ reports = [] }: { reports?: FloodReport[] }) {
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold">User photo AI review</h2>
-          <p className="mt-1 text-sm text-slate-500">YOLO screens each user-submitted flood photo before it reaches the response queue.</p>
+          <h2 className="text-lg font-bold">YOLO station analysis</h2>
+          <p className="mt-1 text-sm text-slate-500">Water-level checks stay inside each user report and response queue.</p>
         </div>
         <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">AI</span>
       </div>
@@ -629,59 +628,7 @@ function AiCard({ reports = [] }: { reports?: FloodReport[] }) {
           </div>
         </article>
       ) : (
-        <div className="mt-4 rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">No user photos have reached AI review yet.</div>
-      )}
-    </section>
-  );
-}
-
-function AiReportReview({ reports }: { reports: FloodReport[] }) {
-  return (
-    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 p-4">
-        <h2 className="text-lg font-bold">AI decisions from user reports</h2>
-        <p className="mt-1 text-sm text-slate-500">Only real user-submitted photos from Supabase are listed here.</p>
-      </div>
-      {reports.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
-          {reports.slice(0, 6).map((report) => {
-            const review = aiReview(report);
-            return (
-              <article key={report.id} className="overflow-hidden rounded-lg border border-slate-100 bg-white">
-                {report.imageUrl ? (
-                  <img src={report.imageUrl} alt="User-submitted flood report" className="h-44 w-full object-cover" />
-                ) : (
-                  <div className="flex h-44 items-center justify-center bg-slate-50 text-slate-300">
-                    <ImageIcon className="h-10 w-10" />
-                  </div>
-                )}
-                <div className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-slate-900">{report.reporterName}</p>
-                      <p className="mt-1 text-xs text-slate-500">{formatDate(report.createdAt)}</p>
-                    </div>
-                    <span className={`shrink-0 rounded-full border px-2 py-1 text-xs font-bold ${review.className}`}>{review.title}</span>
-                  </div>
-                  <WaterLevelMeter report={report} />
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                    <span className="rounded-lg bg-slate-50 px-3 py-2">Status <b>{report.risk}</b></span>
-                    <span className="rounded-lg bg-slate-50 px-3 py-2">AI <b>{confidenceText(report.confidence)}</b></span>
-                  </div>
-                  <p className="line-clamp-2 text-sm text-slate-500">{report.labels.length > 0 ? report.labels.join(", ") : "No YOLO labels yet"}</p>
-                  <a className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900" href={reportMapsHref(report)} target="_blank" rel="noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                    Open report location
-                  </a>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="p-8">
-          <EmptyState icon={ImageIcon} title="No user photos" description="When a user submits a report, the image will be screened by YOLO and shown here." />
-        </div>
+        <div className="mt-4 rounded-lg border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">No user photos have reached YOLO analysis yet.</div>
       )}
     </section>
   );
@@ -1063,35 +1010,6 @@ function DronesView() {
     </>
   );
 }
-
-function AiView({ configured, reports }: { configured: boolean | null; reports: FloodReport[] }) {
-  return (
-    <section className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex flex-col gap-6">
-        <AiCard reports={reports} />
-        <AiReportReview reports={reports} />
-      </div>
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">AI pipeline status</h2>
-        <div className="mt-4 space-y-3 text-sm text-slate-600">
-          <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-            Supabase <span className={configured ? "font-bold text-emerald-700" : "font-bold text-amber-700"}>{configured ? "Connected" : "Missing env"}</span>
-          </p>
-          <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-            YOLO endpoint <span className="font-bold text-slate-700">YOLO_API_URL</span>
-          </p>
-          <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-            Water level <span className="font-bold text-slate-700">depthCm from model</span>
-          </p>
-          <p className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-            Image storage <span className="font-bold text-slate-700">flood-images bucket</span>
-          </p>
-        </div>
-      </section>
-    </section>
-  );
-}
-
 
 function SettingsView({ configured }: { configured: boolean | null }) {
   return (

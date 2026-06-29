@@ -6,7 +6,6 @@ import {
   Bell,
   Drone,
   Menu,
-  Radio,
   Settings,
   Users,
   X,
@@ -23,7 +22,6 @@ const navItems: Array<{
   { label: "Overview", view: "overview", icon: Activity },
   { label: "Reports", view: "reports", icon: Users },
   { label: "Drones", view: "drones", icon: Drone },
-  { label: "AI", view: "ai", icon: Radio },
   { label: "Settings", view: "settings", icon: Settings },
 ];
 
@@ -67,15 +65,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7f6] font-sans">
-      <header className="sticky top-0 z-30 border-b border-[#102a46] bg-[#1a365d] text-white shadow-sm">
+    <div className="min-h-screen bg-[#eef6fb] font-sans">
+      <header className="sticky top-0 z-30 border-b border-cyan-200/30 bg-[linear-gradient(135deg,#0b2545_0%,#16365c_56%,#0e7490_100%)] text-white shadow-[0_8px_24px_rgba(8,47,73,0.22)]">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => selectView("overview")}
             className="flex min-w-0 items-center gap-3 text-left"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/20 bg-white shadow-sm"><img src="/rodnam-logo.svg" alt="Rodnam" className="h-full w-full object-contain p-0.5" /></span><span className="min-w-0"><span className="block truncate text-lg font-bold leading-tight sm:text-xl">rodnam</span><span className="block text-xs text-blue-100">Admin Dashboard</span></span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cyan-100/60 bg-white shadow-sm"><img src="/rodnam-logo.svg" alt="Rodnam" className="h-full w-full object-contain p-0.5" /></span><span className="min-w-0"><span className="block truncate text-lg font-bold leading-tight sm:text-xl">rodnam</span><span className="block text-xs text-blue-100">Admin Dashboard</span></span>
           </button>
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Dashboard sections">

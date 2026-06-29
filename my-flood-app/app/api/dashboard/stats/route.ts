@@ -107,7 +107,7 @@ export async function GET() {
     countTable("drone_missions"),
     countTable("drone_water_events"),
   ]);
-  const userCount = Math.max(authUserCount || 0, reportUserCount);
+  const userCount = reportUserCount;
 
   return json({
     ok: true,

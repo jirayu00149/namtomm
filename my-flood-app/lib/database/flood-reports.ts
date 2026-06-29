@@ -201,7 +201,37 @@ export async function clearFloodReports() {
   const config = getSupabaseConfigState();
 
   if (!supabase) {
-    return { configured: false, deleted: 0, config };
+    return { configured: false, deleted: 0, deletedImages: 0, config };
+  }
+
+  const { data: existingRows, error: listError } = await supabase
+    .from("flood_reports")
+    .select("id,image_path")
+    .neq("id", "00000000-0000-0000-0000-000000000000");
+
+  if (listError) {
+    throw new Error(listError.message);
+  }
+
+  const imagePaths = Array.from(
+    new Set(
+      (existingRows || [])
+        .map((row) => (typeof row.image_path === "string" ? row.image_path.trim() : ""))
+        .filter(Boolean),
+    ),
+  );
+
+  let deletedImages = 0;
+  if (imagePaths.length > 0) {
+    const { data: removedImages, error: removeError } = await supabase.storage
+      .from(FLOOD_IMAGE_BUCKET)
+      .remove(imagePaths);
+
+    if (removeError) {
+      throw new Error(removeError.message);
+    }
+
+    deletedImages = removedImages?.length || 0;
   }
 
   const { data, error } = await supabase
@@ -214,5 +244,5 @@ export async function clearFloodReports() {
     throw new Error(error.message);
   }
 
-  return { configured: true, deleted: data?.length || 0, config };
+  return { configured: true, deleted: data?.length || 0, deletedImages, config };
 }

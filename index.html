@@ -30,7 +30,7 @@
       min-height: 100vh;
       font-family: 'Sarabun', system-ui, sans-serif;
       color: var(--ink);
-      background: #f5f8fb;
+      background: radial-gradient(circle at 20% -10%, rgba(56, 189, 248, 0.24), transparent 32%), linear-gradient(180deg, #f8fbff 0%, #eef7fb 100%);
       display: flex;
       flex-direction: column;
     }
@@ -38,8 +38,8 @@
     .navbar {
       min-height: 76px;
       padding: 12px 24px;
-      background: #ffffff;
-      border-bottom: 1px solid #e2e8f0;
+      background: linear-gradient(135deg, #0b2545 0%, #0f4c81 56%, #0e7490 100%);
+      border-bottom: 1px solid rgba(125, 211, 252, 0.34);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -66,14 +66,14 @@
       margin: 0;
       font-size: clamp(20px, 3vw, 28px);
       line-height: 1.1;
-      color: var(--brand-deep);
+      color: #ffffff;
       font-weight: 800;
       letter-spacing: 0;
     }
 
     .brand-subtitle {
       margin-top: 3px;
-      color: var(--muted);
+      color: #bfdbfe;
       font-size: 13px;
       font-weight: 500;
     }
@@ -84,9 +84,9 @@
       gap: 8px;
       padding: 9px 13px;
       border-radius: 999px;
-      background: #ecfeff;
-      color: #0e7490;
-      border: 1px solid #a5f3fc;
+      background: rgba(255, 255, 255, 0.12);
+      color: #ecfeff;
+      border: 1px solid rgba(165, 243, 252, 0.42);
       white-space: nowrap;
       font-size: 14px;
       font-weight: 700;
@@ -138,7 +138,7 @@
     }
 
     .report-section {
-      background: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
       padding: 22px;
       overflow-y: auto;
       border-left: 1px solid #e2e8f0;
@@ -556,27 +556,6 @@
             <div id="statusMessage" class="status-message">กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...</div>
           </div>
         </div>
-        <div id="aiResult" class="ai-result-card" aria-live="polite">
-          <div class="ai-result-head">
-            <div>
-              <p class="ai-eyebrow">YOLO AI</p>
-              <h4>ผลตรวจระดับน้ำ</h4>
-            </div>
-            <span id="aiRiskChip" class="ai-risk-chip">รอตรวจ</span>
-          </div>
-          <div class="ai-result-grid">
-            <div class="ai-meter"><span id="aiWaterFill" class="ai-meter-fill"></span></div>
-            <div class="ai-metric">
-              <span class="ai-metric-label">ระดับน้ำ</span>
-              <span id="aiDepthValue" class="ai-metric-value">-- ซม.</span>
-            </div>
-            <div class="ai-metric">
-              <span class="ai-metric-label">ความมั่นใจ</span>
-              <span id="aiConfidenceValue" class="ai-metric-value">--</span>
-            </div>
-            <p id="aiLabels" class="ai-labels">อัปโหลดรูปเพื่อให้ AI วิเคราะห์ระดับน้ำ</p>
-          </div>
-        </div>
       </section>
     </aside>
   </main>
@@ -712,32 +691,11 @@
       return ['danger', 'watch', 'safe'].includes(risk) ? risk : 'pending';
     }
 
-    function renderAiResult(yolo) {
-      const card = document.getElementById('aiResult');
-      if (!card) return;
-
-      const risk = yolo && yolo.risk ? yolo.risk : 'pending';
-      const depth = numericDepth(yolo);
-      const confidence = yolo ? yolo.confidence : null;
-      const labels = yolo && Array.isArray(yolo.labels) ? yolo.labels : [];
-      const percent = depth === null ? 0 : Math.max(4, Math.min(100, (depth / 80) * 100));
-
-      card.className = `ai-result-card show ${resultClass(risk)}`;
-      document.getElementById('aiRiskChip').innerText = riskLabel(risk);
-      document.getElementById('aiDepthValue').innerText = formatDepth(yolo);
-      document.getElementById('aiConfidenceValue').innerText = formatConfidence(confidence);
-      document.getElementById('aiWaterFill').style.width = `${percent}%`;
-      document.getElementById('aiLabels').innerText = labels.length
-        ? `ตรวจพบ: ${labels.join(', ')}`
-        : (yolo && yolo.message ? yolo.message : 'AI ยังไม่พบ label จากภาพนี้');
+    function renderAiResult() {
+      // AI still runs on submit; this inline result card is intentionally hidden.
+      clearAiResult();
     }
-
-    function clearAiResult() {
-      const card = document.getElementById('aiResult');
-      if (!card) return;
-      card.className = 'ai-result-card';
-      document.getElementById('aiWaterFill').style.width = '0%';
-    }
+    function clearAiResult() {}
     function showSuccessModal(title, message) {
       document.getElementById('successTitle').innerText = title;
       document.getElementById('successMessage').innerText = message;
@@ -777,14 +735,16 @@
       }
 
       const formData = new FormData();
+      const rodnamUserId = getRodnamUserId();
       formData.append('image', image);
       formData.append('lat', String(userLat));
       formData.append('lng', String(userLng));
       formData.append('locationSource', locationSource);
       if (locationAccuracyM !== null) formData.append('locationAccuracyM', String(locationAccuracyM));
       formData.append('details', detailsInput.value || '');
-      formData.append('userId', getRodnamUserId());
+      formData.append('userId', rodnamUserId);
       formData.append('reporterName', 'ผู้ใช้หน้า User');
+      formData.set('reporterName', 'Rodnam user ' + rodnamUserId.slice(0, 8));
 
       setSubmitting(true);
       clearAiResult();

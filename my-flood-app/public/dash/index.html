@@ -7,7 +7,7 @@
   <link rel="icon" href="/rodnam-logo.svg" />
   <style>
     :root {
-      --navy: #16365c;
+      --navy: #0b2545;
       --blue: #2563eb;
       --cyan: #0891b2;
       --green: #059669;
@@ -20,9 +20,9 @@
       --card: #ffffff;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--soft); color: var(--ink); font-family: "Sarabun", "Noto Sans Thai", "Leelawadee UI", Tahoma, Arial, sans-serif; }
+    body { margin: 0; background: radial-gradient(circle at 18% -10%, rgba(56,189,248,.22), transparent 30%), var(--soft); color: var(--ink); font-family: "Sarabun", "Noto Sans Thai", "Leelawadee UI", Tahoma, Arial, sans-serif; }
     a, button, input { font: inherit; }
-    .topbar { position: sticky; top: 0; z-index: 10; background: var(--navy); color: white; box-shadow: 0 2px 12px rgba(15, 23, 42, .16); }
+    .topbar { position: sticky; top: 0; z-index: 10; background: linear-gradient(135deg,#0b2545,#16365c 58%,#0e7490); color: white; box-shadow: 0 2px 12px rgba(15, 23, 42, .16); }
     .topbar-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; }
     .brand { display: inline-flex; align-items: center; gap: 12px; color: white; text-decoration: none; }
     .brand img { width: 46px; height: 46px; border-radius: 8px; background: white; object-fit: contain; }
@@ -36,7 +36,7 @@
     .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; padding: 9px 11px; background: rgba(255,255,255,.10); color: #eff6ff; font-weight: 700; }
     .dot { width: 9px; height: 9px; border-radius: 999px; background: #34d399; }
     .shell { max-width: 1280px; margin: 0 auto; padding: 24px 20px 36px; }
-    .hero, .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 5px rgba(15,23,42,.05); }
+    .hero, .card { background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 28px rgba(15,23,42,.07); }
     .hero { padding: 22px; display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
     .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: #e0f2fe; color: #0369a1; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 800; }
     h1, h2, h3, p { margin: 0; }
@@ -106,7 +106,6 @@
       <nav class="nav" aria-label="Dashboard sections">
         <button class="nav-button active" type="button" data-view-button="overview">Overview</button>
         <button class="nav-button" type="button" data-view-button="reports">Reports</button>
-        <button class="nav-button" type="button" data-view-button="ai">AI Review</button>
         <button class="nav-button" type="button" data-view-button="drones">Drones</button>
         <button class="nav-button" type="button" data-view-button="settings">Settings</button>
       </nav>
@@ -121,7 +120,7 @@
       <div>
         <div class="eyebrow">Live command center</div>
         <h1>Flood response dashboard</h1>
-        <p class="lead">Citizen reports, user photo AI screening, YOLO water-level measurement, map links and drone operations are pulled from the live API.</p>
+        <p class="lead">Citizen reports, YOLO photo screening, YOLO water-level measurement, map links and drone operations are pulled from the live API.</p>
       </div>
       <div class="sync"><span class="dot"></span><span id="syncText">Connecting...</span></div>
     </section>
@@ -131,10 +130,6 @@
       <aside class="stack" id="sidePanel"></aside>
     </section>
     <section class="card dash-view" data-view="reports" id="reportsPanel" style="margin-top:16px" hidden></section>
-    <section class="grid ai-grid dash-view" data-view="ai" id="aiView" style="margin-top:16px" hidden>
-      <section class="card ai-box" id="aiUploadPanel"><h2 class="card-title">Analyze water level from images</h2><p class="card-subtitle">Upload one or more flood photos. The dashboard sends each image to YOLO and shows the measured water height per file.</p><div class="soft-panel" style="margin-top:14px"><input id="aiImageInput" type="file" accept="image/*" multiple /><button class="button" id="aiAnalyzeButton" type="button" style="margin-top:12px">Analyze selected images</button></div><div class="report-list" id="aiAnalyzeResults"></div></section>
-      <aside class="stack" id="aiPanel"></aside>
-    </section>
     <section class="grid ai-grid dash-view" data-view="drones" style="margin-top:16px" hidden>
       <section class="card ai-box" id="dronesPanel"><h2 class="card-title">Drone operations</h2><p class="card-subtitle">Open the existing drone console and keep drone captures grouped with flood reports.</p><a class="button" style="margin-top:14px" href="/drone" target="_blank" rel="noreferrer">Open drone page</a></section>
     </section>
@@ -205,7 +200,7 @@
         ["Real users", stats.userCount ?? 0, "users"],
         ["User reports", reports.length, "items"],
         ["Stored images", images, "files"],
-        ["AI detected", detected, "photos"],
+        ["YOLO alerts", detected, "photos"],
         ["Assigned", assigned, "cases"],
       ];
       $("summaryGrid").innerHTML = items.map(([label, value, unit]) => '<article class="card summary-card"><p class="summary-label">' + label + '</p><p class="summary-value">' + value + ' <span class="summary-unit">' + unit + '</span></p></article>').join("");
@@ -228,7 +223,7 @@
       const review = latest ? reviewFor(latest) : null;
       const detected = state.reports.filter((report) => reviewFor(report).state === "detected").length;
       const pending = state.reports.filter((report) => reviewFor(report).state === "review").length;
-      const sideHtml = '<section class="card ai-box"><div class="card-head" style="padding:0 0 14px;border-bottom:0"><div><h2 class="card-title">User photo AI review</h2><p class="card-subtitle">YOLO screens each photo submitted by users.</p></div><span class="tag pending">AI</span></div><div class="soft-panel"><div class="split"><span class="metric">Detected ' + detected + '</span><span class="metric">Review ' + pending + '</span></div></div>' + (latest ? '<article class="card" style="margin-top:14px;overflow:hidden"><div class="thumb" style="width:100%;height:190px;border-radius:0">' + (latest.imageUrl ? '<img src="' + latest.imageUrl + '" alt="Latest user report">' : "No image") + '</div><div style="padding:14px"><span class="tag ' + review.state + '">' + review.title + '</span><p style="margin-top:10px"><b>' + riskText(latest) + '</b></p>' + waterMeter(latest) + '<p class="muted" style="margin-top:10px">' + confidenceText(latest.confidence) + '</p></div></article>' : '<div class="empty">No user photos have reached AI review yet.</div>') + '</section><section class="card ai-box"><h2 class="card-title">Priority response queue</h2>' + renderQueue() + '</section>';
+      const sideHtml = '<section class="card ai-box"><div class="card-head" style="padding:0 0 14px;border-bottom:0"><div><h2 class="card-title">YOLO station analysis</h2><p class="card-subtitle">Water-level checks stay inside each user report.</p></div><span class="tag pending">AI</span></div><div class="soft-panel"><div class="split"><span class="metric">Detected ' + detected + '</span><span class="metric">Review ' + pending + '</span></div></div>' + (latest ? '<article class="card" style="margin-top:14px;overflow:hidden"><div class="thumb" style="width:100%;height:190px;border-radius:0">' + (latest.imageUrl ? '<img src="' + latest.imageUrl + '" alt="Latest user report">' : "No image") + '</div><div style="padding:14px"><span class="tag ' + review.state + '">' + review.title + '</span><p style="margin-top:10px"><b>' + riskText(latest) + '</b></p>' + waterMeter(latest) + '<p class="muted" style="margin-top:10px">' + confidenceText(latest.confidence) + '</p></div></article>' : '<div class="empty">No user photos have reached YOLO analysis yet.</div>') + '</section><section class="card ai-box"><h2 class="card-title">Priority response queue</h2>' + renderQueue() + '</section>';
       $("sidePanel").innerHTML = sideHtml;
       const aiPanel = $("aiPanel");
       if (aiPanel) aiPanel.innerHTML = sideHtml;
@@ -293,7 +288,7 @@
     }
 
     function activateMenu(view) {
-      const selected = ["overview", "reports", "ai", "drones", "settings"].includes(view) ? view : "overview";
+      const selected = ["overview", "reports", "drones", "settings"].includes(view) ? view : "overview";
       state.view = selected;
       document.querySelectorAll(".dash-view").forEach((panel) => {
         panel.hidden = panel.dataset.view !== selected;
