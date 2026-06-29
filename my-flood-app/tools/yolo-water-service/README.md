@@ -68,6 +68,25 @@ npm run yolo:service
 
 6. Run the Next app in another terminal. When a user submits a report image, `/api/reports` sends the image to this service and stores `yolo_depth_cm`, `yolo_risk`, `yolo_confidence`, and `yolo_labels`.
 
+
+## Production
+
+Do not use a local `trycloudflare.com` tunnel for production. It stops when the computer is off and the URL can change.
+
+For an always-on setup, deploy this service to a VPS or GPU server:
+
+```powershell
+npm run yolo:docker:up
+```
+
+Then set the Cloudflare Worker secret `YOLO_API_URL` to the VPS endpoint, for example:
+
+```text
+https://yolo.your-domain.com/detect-water-level
+```
+
+See `docs/yolo-production-deploy.md` for the full deployment steps.
+
 ## Calibration
 
 `WATER_REFERENCE_TOP_Y`, `WATER_REFERENCE_BOTTOM_Y`, and `WATER_REFERENCE_HEIGHT_CM` define the measured vertical span in the image. The default pole reference height is 900 cm so a detected utility/electric pole can be used as a 9 m scale reference. If the detected reference is a water-level staff/gauge, the service uses `WATER_GAUGE_REFERENCE_HEIGHT_CM` instead. For Roboflow classes like `level-1` through `level-12`, the service maps the class to centimeters with `WATER_LEVEL_CLASS_STEP_CM` and `WATER_LEVEL_CLASS_BASE_CM`. For a real deployment, calibrate these values from a visible gauge, marker, bridge pillar, utility pole, or camera-specific reference distance. Without calibration, the service can detect flood-water but the centimeter value is only an estimate.

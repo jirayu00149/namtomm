@@ -17,7 +17,10 @@
     "yolo:train": "python tools/yolo-water-service/train.py",
     "yolo:train:quick": "python tools/yolo-water-service/train.py --epochs 20 --imgsz 416 --batch 1 --name flood_level_quick",
     "yolo:train:smoke": "python tools/yolo-water-service/train.py --epochs 1 --imgsz 320 --batch 1 --fraction 0.01 --name flood_level_smoke --exist-ok --no-copy",
-    "yolo:service": "python tools/yolo-water-service/server.py"
+    "yolo:service": "python tools/yolo-water-service/server.py",
+    "yolo:docker:build": "docker build -f tools/yolo-water-service/Dockerfile -t rodnam-yolo-water-service .",
+    "yolo:docker:up": "docker compose -f docker-compose.yolo.yml up -d --build",
+    "yolo:docker:logs": "docker compose -f docker-compose.yolo.yml logs -f yolo-water-service"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.108.2",

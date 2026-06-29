@@ -50,3 +50,4 @@ supabase/.temp/
 
 # local YOLO model weights
 tools/yolo-water-service/models/*.pt
+!tools/yolo-water-service/models/flood_water_level.pt
