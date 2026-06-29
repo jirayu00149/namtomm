@@ -94,6 +94,40 @@
     .empty { padding: 34px; text-align: center; color: var(--muted); }
     @media (max-width: 1060px) { .summary, .layout, .ai-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .report-row { grid-template-columns: 92px minmax(0,1fr); } .report-row > :nth-child(n+4) { grid-column: 2; } .hero { align-items: flex-start; flex-direction: column; } }
     @media (max-width: 760px) { .topbar-inner { align-items: stretch; flex-direction: column; } .nav { justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; } .status-strip { flex-wrap: wrap; } .summary, .layout, .ai-grid, .split { grid-template-columns: 1fr; } .report-row { grid-template-columns: 1fr; } .thumb { width: 100%; height: 180px; } }
+
+    /* Gemini operational dashboard v2 */
+    body { min-height: 100vh; background: radial-gradient(circle at 16% -10%, rgba(77, 160, 255, .22), transparent 28%), linear-gradient(135deg, #10141a, #17202a 58%, #0b2538); }
+    .topbar { border-bottom: 1px solid rgba(125,211,252,.28); }
+    .shell { max-width: 1480px; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; padding: 18px; }
+    .side-rail { position: sticky; top: 18px; height: calc(100vh - 36px); border: 1px solid rgba(125, 211, 252, .24); border-radius: 16px; background: rgba(9, 22, 37, .82); box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 22px 60px rgba(0,0,0,.28); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 10px; }
+    .rail-logo { width: 42px; height: 42px; border-radius: 12px; background: white; object-fit: contain; padding: 3px; margin-bottom: 8px; }
+    .rail-button { width: 38px; height: 38px; border: 1px solid rgba(125,211,252,.18); border-radius: 12px; background: rgba(255,255,255,.06); color: #bfdbfe; display: grid; place-items: center; font-weight: 900; }
+    .rail-button.active { background: #2563eb; color: white; }
+    .ops-main { min-width: 0; }
+    .hero { background: linear-gradient(135deg, #277dda, #5eb8ff 58%, #56bba8); color: white; border-color: rgba(255,255,255,.22); align-items: center; padding: 14px 16px; }
+    .hero h1 { margin-top: 4px; font-size: clamp(22px, 2.4vw, 32px); }
+    .lead { color: #e8f6ff; }
+    .eyebrow { background: rgba(255,255,255,.16); color: white; }
+    .sync { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: white; }
+    .summary { grid-template-columns: repeat(5, minmax(128px, 1fr)); }
+    .summary-card { background: rgba(255,255,255,.96); min-height: 96px; }
+    .layout { grid-template-columns: minmax(0, 1fr) 350px; grid-template-areas: "map side" "reports side"; align-items: start; }
+    #mapPanel { grid-area: map; }
+    #sidePanel { grid-area: side; }
+    #overviewReportsPanel { grid-area: reports; }
+    .map { min-height: 430px; }
+    .card-head { background: linear-gradient(180deg, #ffffff, #f8fbff); }
+    .report-row { grid-template-columns: 86px 94px minmax(0,1fr) 150px 132px; }
+    .ai-box { background: rgba(255,255,255,.96); }
+    .station-frame { border: 1px solid #dbeafe; border-radius: 12px; background: linear-gradient(180deg, #eff6ff, #ffffff); padding: 10px; }
+    .station-photo { height: 150px; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #bae6fd, #f8fafc); display: grid; place-items: center; color: #0369a1; font-weight: 900; }
+    .station-gauge { margin-top: 10px; height: 8px; border-radius: 999px; background: #dbeafe; overflow: hidden; }
+    .station-gauge span { display: block; height: 100%; width: 62%; background: linear-gradient(90deg, #f59e0b, #ef4444); }
+    .ops-mini-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .ops-mini { border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; padding: 10px; }
+    .ops-mini b { display: block; margin-top: 4px; color: #0f172a; font-size: 18px; }
+    @media (max-width: 1080px) { .shell { grid-template-columns: 1fr; } .side-rail { display: none; } .layout { grid-template-columns: 1fr; grid-template-areas: "map" "side" "reports"; } }
+    @media (max-width: 760px) { .summary { grid-template-columns: 1fr 1fr; } .hero { flex-direction: column; align-items: flex-start; } }
   </style>
 </head>
 <body>
@@ -116,6 +150,8 @@
     </div>
   </header>
   <main class="shell">
+    <aside class="side-rail" aria-label="Operational sections"><img class="rail-logo" src="/rodnam-logo.svg" alt="rodnam" /><button class="rail-button active" type="button" data-view-button="overview">⌂</button><button class="rail-button" type="button" data-view-button="reports">▤</button><button class="rail-button" type="button" data-view-button="drones">✈</button><button class="rail-button" type="button" data-view-button="settings">⚙</button></aside>
+    <div class="ops-main">
     <section class="hero">
       <div>
         <div class="eyebrow">Live command center</div>
@@ -128,6 +164,7 @@
     <section class="grid layout dash-view" data-view="overview" id="overviewPanel" style="margin-top:16px">
       <section class="card" id="mapPanel"></section>
       <aside class="stack" id="sidePanel"></aside>
+      <section class="card" id="overviewReportsPanel"></section>
     </section>
     <section class="card dash-view" data-view="reports" id="reportsPanel" style="margin-top:16px" hidden></section>
     <section class="grid ai-grid dash-view" data-view="drones" style="margin-top:16px" hidden>
@@ -136,6 +173,7 @@
     <section class="grid ai-grid dash-view" data-view="settings" style="margin-top:16px" hidden>
       <section class="card ai-box" id="settingsPanel"><h2 class="card-title">Settings</h2><p class="card-subtitle">Live endpoints: /api/reports, /api/dashboard/stats and /api/drones.</p><div class="soft-panel" style="margin-top:14px">Dashboard uses live database records only. Sample cases stay disabled.</div></section>
     </section>
+    </div>
   </main>
   <script>
     const state = { reports: [], stats: null, drones: null, dronesError: null, error: null, updatedAt: null, view: "overview" };
@@ -223,12 +261,16 @@
       const review = latest ? reviewFor(latest) : null;
       const detected = state.reports.filter((report) => reviewFor(report).state === "detected").length;
       const pending = state.reports.filter((report) => reviewFor(report).state === "review").length;
-      const sideHtml = '<section class="card ai-box"><div class="card-head" style="padding:0 0 14px;border-bottom:0"><div><h2 class="card-title">YOLO station analysis</h2><p class="card-subtitle">Water-level checks stay inside each user report.</p></div><span class="tag pending">AI</span></div><div class="soft-panel"><div class="split"><span class="metric">Detected ' + detected + '</span><span class="metric">Review ' + pending + '</span></div></div>' + (latest ? '<article class="card" style="margin-top:14px;overflow:hidden"><div class="thumb" style="width:100%;height:190px;border-radius:0">' + (latest.imageUrl ? '<img src="' + latest.imageUrl + '" alt="Latest user report">' : "No image") + '</div><div style="padding:14px"><span class="tag ' + review.state + '">' + review.title + '</span><p style="margin-top:10px"><b>' + riskText(latest) + '</b></p>' + waterMeter(latest) + '<p class="muted" style="margin-top:10px">' + confidenceText(latest.confidence) + '</p></div></article>' : '<div class="empty">No user photos have reached YOLO analysis yet.</div>') + '</section><section class="card ai-box"><h2 class="card-title">Priority response queue</h2>' + renderQueue() + '</section>';
+      const drones = state.drones && Array.isArray(state.drones.drones) ? state.drones.drones : [];
+      const onlineDrones = drones.filter((drone) => drone.status !== "offline").length;
+      const avgBattery = drones.length ? Math.round(drones.reduce((sum, drone) => sum + Number(drone.battery_percent || 0), 0) / drones.length) : 0;
+      const latestDrone = drones[0];
+      const stationHtml = '<section class="card ai-box"><div class="card-head" style="padding:0 0 12px;border-bottom:0"><div><h2 class="card-title">YOLO station analysis</h2><p class="card-subtitle">Integrated water-level result from user photos.</p></div><span class="tag pending">LIVE</span></div><div class="station-frame"><div class="station-photo">' + (latest && latest.imageUrl ? '<img src="' + latest.imageUrl + '" alt="Latest flood report" style="width:100%;height:100%;object-fit:cover">' : 'No image') + '</div><div class="station-gauge"><span></span></div><div class="ops-mini-grid" style="margin-top:10px"><div class="ops-mini">Detected<b>' + detected + '</b></div><div class="ops-mini">Review<b>' + pending + '</b></div></div>' + (latest ? '<p class="muted" style="margin-top:10px">' + riskText(latest) + ' · ' + confidenceText(latest.confidence) + '</p>' : '<p class="muted" style="margin-top:10px">Waiting for first user report.</p>') + '</div></section>';
+      const droneHtml = '<section class="card ai-box"><h2 class="card-title">Drone status</h2><div class="ops-mini-grid" style="margin-top:12px"><div class="ops-mini">Ready<b>' + onlineDrones + '</b></div><div class="ops-mini">Battery<b>' + avgBattery + '%</b></div></div><p class="muted" style="margin-top:10px">' + (latestDrone ? escapeHtml(latestDrone.name || latestDrone.code || 'Drone') + ' · ' + escapeHtml(latestDrone.status || 'unknown') : 'No drone telemetry yet') + '</p></section>';
+      const overviewHtml = '<section class="card ai-box"><h2 class="card-title">Operational overview</h2><div class="ops-mini-grid" style="margin-top:12px"><div class="ops-mini">Open cases<b>' + state.reports.length + '</b></div><div class="ops-mini">Users<b>' + ((state.stats && state.stats.userCount) || 0) + '</b></div></div></section>';
+      const sideHtml = stationHtml + droneHtml + '<section class="card ai-box"><h2 class="card-title">Priority response queue</h2>' + renderQueue() + '</section>' + overviewHtml;
       $("sidePanel").innerHTML = sideHtml;
-      const aiPanel = $("aiPanel");
-      if (aiPanel) aiPanel.innerHTML = sideHtml;
     }
-
     function renderQueue() {
       const queue = state.reports.filter((report) => report.priority !== "normal").slice(0, 5);
       return queue.length ? queue.map((report) => '<article style="border-top:1px solid #edf2f7;padding:12px 0"><b>' + escapeHtml(report.reporterName) + '</b><p class="muted">' + report.lat.toFixed(5) + ', ' + report.lng.toFixed(5) + '</p><span class="tag ' + riskClass(report.risk) + '">' + riskText(report) + '</span></article>').join("") : '<div class="empty">No priority cases</div>';
@@ -241,7 +283,11 @@
 
     function renderReportsPanel(limit) {
       const reports = typeof limit === "number" ? state.reports.slice(0, limit) : state.reports;
-      $("reportsPanel").innerHTML = '<div class="card-head"><div><h2 class="card-title">Incoming reports</h2><p class="card-subtitle">Supabase data: user image, location and YOLO result.</p></div></div>' + (state.error ? '<div class="soft-panel" style="margin:16px;color:#be123c">' + escapeHtml(state.error) + '</div>' : "") + '<div class="report-list">' + (reports.length ? reports.map(reportRow).join("") : '<div class="empty">No dashboard records.</div>') + '</div>';
+      const reportsHtml = '<div class="card-head"><div><h2 class="card-title">Incoming reports</h2><p class="card-subtitle">Supabase data: user image, location and YOLO result.</p></div></div>' + (state.error ? '<div class="soft-panel" style="margin:16px;color:#be123c">' + escapeHtml(state.error) + '</div>' : "") + '<div class="report-list">' + (reports.length ? reports.map(reportRow).join("") : '<div class="empty">No dashboard records.</div>') + '</div>';
+      const reportsPanelElement = $("reportsPanel");
+      const overviewReportsPanelElement = $("overviewReportsPanel");
+      if (reportsPanelElement) reportsPanelElement.innerHTML = reportsHtml;
+      if (overviewReportsPanelElement) overviewReportsPanelElement.innerHTML = reportsHtml;
     }
 
 

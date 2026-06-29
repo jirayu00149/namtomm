@@ -450,15 +450,17 @@ function OverviewView({
 
       <SummaryGrid summary={summary} />
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <MapPanel latestReport={latestReport} loading={loading} reports={reports} />
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex flex-col gap-4">
+          <MapPanel latestReport={latestReport} loading={loading} reports={reports} />
+          <ReportsPanel error={error} loading={loading} reports={reports} />
+        </div>
         <aside className="flex flex-col gap-4">
           <AiCard reports={reports} />
+          <OperationalOverviewCard reports={reports} />
           <RescueQueue reports={activeQueue} />
         </aside>
       </section>
-
-      <ReportsPanel error={error} loading={loading} reports={reports} />
     </>
   );
 }
@@ -493,7 +495,7 @@ function MapPanel({ latestReport, loading, reports }: { latestReport: FloodRepor
   const mapsHref = reportMapsHref(latestReport);
 
   return (
-    <div className="flex min-h-[560px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="flex min-h-[460px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-bold">Live response map</h2>
@@ -634,6 +636,35 @@ function AiCard({ reports = [] }: { reports?: FloodReport[] }) {
   );
 }
 
+function OperationalOverviewCard({ reports }: { reports: FloodReport[] }) {
+  const detected = reports.filter((report) => aiReview(report).state === "detected").length;
+  const critical = reports.filter((report) => report.priority === "critical").length;
+  const pending = reports.filter((report) => aiReview(report).state === "review").length;
+
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 className="text-lg font-bold">Operational overview</h2>
+      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+          <p className="text-xs font-semibold text-slate-500">Active reports</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{reports.length}</p>
+        </div>
+        <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
+          <p className="text-xs font-semibold text-rose-600">Critical</p>
+          <p className="mt-1 text-2xl font-bold text-rose-700">{critical}</p>
+        </div>
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+          <p className="text-xs font-semibold text-blue-600">YOLO alerts</p>
+          <p className="mt-1 text-2xl font-bold text-blue-700">{detected}</p>
+        </div>
+        <div className="rounded-lg border border-amber-100 bg-amber-50 p-3">
+          <p className="text-xs font-semibold text-amber-600">Review</p>
+          <p className="mt-1 text-2xl font-bold text-amber-700">{pending}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
 function RescueQueue({ reports }: { reports: FloodReport[] }) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">

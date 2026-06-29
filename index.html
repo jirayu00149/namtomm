@@ -495,6 +495,138 @@
       .report-section { border-left: 0; border-top: 1px solid #e2e8f0; }
       .online-pill { white-space: normal; }
     }
+
+    /* Gemini operational mobile v2 */
+    .main-container {
+      grid-template-columns: minmax(460px, 1fr) minmax(360px, 470px);
+      gap: 22px;
+      padding: 22px;
+      background: radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.26), transparent 34%), linear-gradient(135deg, #081827 0%, #0f2742 54%, #103d52 100%);
+    }
+
+    .map-section {
+      min-height: calc(100vh - 120px);
+      overflow: hidden;
+      border: 1px solid rgba(125, 211, 252, 0.28);
+      border-radius: 18px;
+      box-shadow: 0 24px 70px rgba(2, 6, 23, 0.34), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    #map { min-height: calc(100vh - 120px); }
+
+    .map-badge {
+      top: 18px;
+      left: 18px;
+      border-color: rgba(125, 211, 252, 0.38);
+      background: rgba(8, 24, 39, 0.84);
+      color: #dff7ff;
+      backdrop-filter: blur(14px);
+    }
+
+    .map-badge strong { color: #ffffff; }
+    .map-badge span { color: #b9d9e8; }
+
+    .report-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border-left: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .phone-frame {
+      width: min(100%, 430px);
+      max-height: calc(100vh - 120px);
+      overflow: hidden;
+      border: 10px solid #0b1220;
+      border-radius: 34px;
+      background: #f7fbff;
+      box-shadow: 0 32px 90px rgba(2, 6, 23, 0.48), 0 0 0 1px rgba(125, 211, 252, 0.4);
+    }
+
+    .phone-scroll {
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+      padding-bottom: 92px;
+    }
+
+    .app-head {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 18px;
+      background: linear-gradient(135deg, #0f7fd0, #38bdf8 62%, #56bba8);
+      color: white;
+      box-shadow: 0 10px 28px rgba(14, 116, 144, 0.22);
+    }
+
+    .app-head-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .app-avatar { width: 46px; height: 46px; border-radius: 999px; background: white; padding: 3px; object-fit: contain; }
+    .app-title { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 0; }
+    .app-subtitle { margin-top: 2px; color: #e0f7ff; font-size: 12px; font-weight: 700; }
+    .app-icon-button { width: 40px; height: 40px; border: 0; border-radius: 999px; background: rgba(255,255,255,.18); color: white; display: grid; place-items: center; }
+
+    .recent-strip { padding: 14px 16px 2px; }
+    .section-kicker { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; color: #0f2742; font-size: 13px; font-weight: 900; }
+    .recent-cards { display: grid; grid-template-columns: repeat(3, minmax(118px, 1fr)); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+    .recent-card { min-width: 118px; border: 1px solid #dbeafe; border-radius: 14px; background: white; padding: 10px; box-shadow: 0 8px 22px rgba(15,23,42,.06); }
+    .recent-card strong { display: block; color: #0f2742; font-size: 12px; line-height: 1.25; }
+    .recent-card span { display: inline-flex; margin-top: 8px; border-radius: 999px; background: #e0f2fe; color: #0369a1; padding: 4px 7px; font-size: 10px; font-weight: 800; }
+
+    .report-section .card {
+      margin: 14px 16px 0;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid #d7e7f5;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    .workflow-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .workflow-title h3 { color: #0f2742; font-size: 18px; }
+    .workflow-chip { border-radius: 999px; background: #ecfeff; border: 1px solid #a5f3fc; color: #0e7490; padding: 6px 10px; font-size: 11px; font-weight: 900; }
+    .step-block { margin-top: 14px; }
+    .step-label { margin-bottom: 8px; color: #475569; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+    .urgency-grid, .evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+    .urgency-option, .evidence-option { min-height: 72px; border: 1px solid #dbeafe; border-radius: 14px; background: #ffffff; color: #123047; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 900; cursor: pointer; }
+    .urgency-option.critical { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+    .urgency-option.high { background: #fef3c7; border-color: #fde68a; color: #b45309; }
+    .urgency-option.medium { background: #dcfce7; border-color: #bbf7d0; color: #047857; }
+    .evidence-option.primary { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .evidence-option i, .urgency-option i { font-size: 18px; }
+    .file-drop { min-height: 72px; padding: 8px; border: 0; background: transparent; }
+    .file-drop p { margin: 0; max-width: 100%; overflow-wrap: anywhere; font-size: 11px; }
+    .location-card { border: 1px solid #dbeafe; border-radius: 14px; background: linear-gradient(180deg, #f8fbff, #eef8ff); padding: 12px; }
+    .location-card input, .details-card input { margin-top: 8px; }
+    .mini-map-preview { height: 92px; margin-top: 10px; border-radius: 12px; background: linear-gradient(135deg, #e0f2fe, #f0fdfa); border: 1px solid #dbeafe; position: relative; overflow: hidden; }
+    .mini-map-preview::before, .mini-map-preview::after { content: ""; position: absolute; border-radius: 999px; border: 2px solid rgba(14, 116, 144, .22); }
+    .mini-map-preview::before { width: 220px; height: 62px; left: -24px; top: 20px; transform: rotate(-8deg); }
+    .mini-map-preview::after { width: 160px; height: 42px; right: -18px; bottom: 10px; transform: rotate(12deg); }
+    .mini-pin { position: absolute; left: 52%; top: 45%; width: 28px; height: 28px; border-radius: 999px; background: #0f7fd0; color: white; display: grid; place-items: center; transform: translate(-50%, -50%); box-shadow: 0 8px 18px rgba(15, 23, 42, .2); }
+    .bottom-tabs { position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px 18px 14px; background: rgba(247, 251, 255, .92); backdrop-filter: blur(14px); border-top: 1px solid #dbeafe; }
+    .bottom-tabs button { border: 0; background: transparent; color: #64748b; font-size: 11px; font-weight: 800; display: grid; place-items: center; gap: 4px; }
+    .bottom-tabs button.active { color: #0f7fd0; }
+
+    @media (max-width: 980px) {
+      .main-container { grid-template-columns: 1fr; padding: 14px; }
+      .map-section { min-height: 340px; }
+      #map { min-height: 340px; }
+      .phone-frame { max-height: none; border-radius: 26px; }
+      .phone-scroll { max-height: none; }
+    }
+
+    @media (max-width: 520px) {
+      .navbar { display: none; }
+      .main-container { padding: 0; gap: 0; background: #f7fbff; }
+      .map-section { display: none; }
+      .phone-frame { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+      .recent-cards { grid-template-columns: repeat(3, 128px); }
+    }
   </style>
 </head>
 <body>
@@ -519,44 +651,97 @@
     </section>
 
     <aside class="report-section" aria-label="ฟอร์มรายงานน้ำท่วม">
-      <div class="logo-panel">
-        <img src="assets/rodnam-logo.svg" alt="Rodnam Flood Relief and Recovery" />
-      </div>
-
-      <button class="btn-sos" type="button">
-        <i class="fa-solid fa-truck-medical"></i>
-        ขอความช่วยเหลือฉุกเฉิน
-      </button>
-
-      <section class="card">
-        <h3>รายงานระดับน้ำด้วย AI</h3>
-
-        <label for="locationInput">พิกัดของคุณ (GPS)</label>
-        <input type="text" id="locationInput" placeholder="กำลังดึงตำแหน่งพิกัด..." readonly />
-
-        <label>รูปภาพน้ำท่วม</label>
-        <div class="file-drop" onclick="document.getElementById('fileInput').click()" role="button" tabindex="0">
-          <i class="fa-solid fa-camera fa-2x"></i>
-          <p id="fileName">คลิกเพื่ออัปโหลดรูปภาพน้ำท่วม</p>
-          <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileName(this)" />
-        </div>
-
-        <label for="detailsInput">รายละเอียดเพิ่มเติม</label>
-        <input type="text" id="detailsInput" placeholder="เช่น ถนนตัดขาด มีคนติดอยู่ในบ้าน หรือระดับน้ำเพิ่มเร็ว" />
-
-        <button id="submitButton" class="btn-report" type="button" onclick="submitReport()">
-          <i class="fa-solid fa-paper-plane"></i>
-          ส่งรายงานและประเมิน AI
-        </button>
-
-        <div id="submitStatus" class="submit-status" role="status" aria-live="polite">
-          <div id="statusIcon" class="status-spinner"></div>
-          <div>
-            <div id="statusTitle" class="status-title">กำลังส่งรายงาน</div>
-            <div id="statusMessage" class="status-message">กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...</div>
+      <div class="phone-frame">
+        <div class="phone-scroll">
+          <div class="app-head">
+            <div class="app-head-main">
+              <img class="app-avatar" src="assets/rodnam-logo.svg" alt="Rodnam logo" />
+              <div>
+                <p class="app-title">rodnam</p>
+                <div class="app-subtitle">รายงานน้ำท่วมแบบเป็นขั้นตอน</div>
+              </div>
+            </div>
+            <button class="app-icon-button" type="button" aria-label="แจ้งเตือน"><i class="fa-solid fa-bell"></i></button>
           </div>
+
+          <section class="recent-strip" aria-label="รายงานล่าสุดของคุณ">
+            <div class="section-kicker"><span>My Recent Reports</span><span>Status</span></div>
+            <div class="recent-cards">
+              <article class="recent-card"><strong>ยังไม่มีเคสใหม่</strong><span>Ready</span></article>
+              <article class="recent-card"><strong>ระบบ YOLO พร้อม</strong><span>Online</span></article>
+              <article class="recent-card"><strong>พิกัด GPS</strong><span id="miniGpsStatus">Syncing</span></article>
+            </div>
+          </section>
+
+          <button class="btn-sos" type="button">
+            <i class="fa-solid fa-truck-medical"></i>
+            ขอความช่วยเหลือฉุกเฉิน
+          </button>
+
+          <section class="card report-workflow">
+            <div class="workflow-title">
+              <h3>Enhanced New Report</h3>
+              <span class="workflow-chip">YOLO enabled</span>
+            </div>
+
+            <div class="step-block">
+              <div class="step-label">1. Select urgency</div>
+              <div class="urgency-grid" aria-label="เลือกระดับความเร่งด่วน">
+                <button class="urgency-option critical" type="button"><i class="fa-solid fa-triangle-exclamation"></i>Critical</button>
+                <button class="urgency-option high" type="button"><i class="fa-solid fa-water"></i>High</button>
+                <button class="urgency-option medium" type="button"><i class="fa-solid fa-house-flood-water"></i>Medium</button>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-label">2. Upload evidence</div>
+              <div class="evidence-grid">
+                <button class="evidence-option primary" type="button" onclick="document.getElementById('fileInput').click()">
+                  <i class="fa-solid fa-camera"></i>
+                  <span id="fileName">Camera</span>
+                  <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileName(this)" />
+                </button>
+                <button class="evidence-option" type="button" onclick="document.getElementById('fileInput').click()"><i class="fa-regular fa-image"></i>Gallery</button>
+                <button class="evidence-option" type="button"><i class="fa-solid fa-microphone-lines"></i>Voice</button>
+              </div>
+            </div>
+
+            <div class="step-block">
+              <div class="step-label">3. Confirm location</div>
+              <div class="location-card">
+                <label for="locationInput">พิกัดของคุณ (GPS)</label>
+                <input type="text" id="locationInput" placeholder="กำลังดึงตำแหน่งพิกัด..." readonly />
+                <div class="mini-map-preview" aria-hidden="true"><span class="mini-pin"><i class="fa-solid fa-location-dot"></i></span></div>
+              </div>
+            </div>
+
+            <div class="step-block details-card">
+              <div class="step-label">4. Report details</div>
+              <label for="detailsInput">รายละเอียดเพิ่มเติม</label>
+              <input type="text" id="detailsInput" placeholder="เช่น ถนนตัดขาด มีคนติดอยู่ในบ้าน หรือระดับน้ำเพิ่มเร็ว" />
+            </div>
+
+            <button id="submitButton" class="btn-report" type="button" onclick="submitReport()">
+              <i class="fa-solid fa-paper-plane"></i>
+              Submit & Alert Authorities
+            </button>
+
+            <div id="submitStatus" class="submit-status" role="status" aria-live="polite">
+              <div id="statusIcon" class="status-spinner"></div>
+              <div>
+                <div id="statusTitle" class="status-title">กำลังส่งรายงาน</div>
+                <div id="statusMessage" class="status-message">กำลังส่งภาพไปให้ YOLO วิเคราะห์ระดับน้ำ และบันทึกลงฐานข้อมูล...</div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+
+        <nav class="bottom-tabs" aria-label="เมนูหลัก">
+          <button class="active" type="button"><i class="fa-solid fa-flag"></i>Report</button>
+          <button type="button"><i class="fa-solid fa-house"></i>Shelters</button>
+          <button type="button"><i class="fa-regular fa-circle-check"></i>Status</button>
+        </nav>
+      </div>
     </aside>
   </main>
 
@@ -641,7 +826,7 @@
 
     function handleFileName(input) {
       const fileName = document.getElementById('fileName');
-      fileName.innerText = input.files && input.files[0] ? input.files[0].name : 'คลิกเพื่ออัปโหลดรูปภาพน้ำท่วม';
+      fileName.innerText = input.files && input.files[0] ? input.files[0].name : 'Camera';
     }
 
     function showSubmitStatus(type, title, message) {
