@@ -592,13 +592,10 @@
     .workflow-chip { border-radius: 999px; background: #ecfeff; border: 1px solid #a5f3fc; color: #0e7490; padding: 6px 10px; font-size: 11px; font-weight: 900; }
     .step-block { margin-top: 14px; }
     .step-label { margin-bottom: 8px; color: #475569; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-    .urgency-grid, .evidence-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
-    .urgency-option, .evidence-option { min-height: 72px; border: 1px solid #dbeafe; border-radius: 14px; background: #ffffff; color: #123047; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 900; cursor: pointer; }
-    .urgency-option.critical { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
-    .urgency-option.high { background: #fef3c7; border-color: #fde68a; color: #b45309; }
-    .urgency-option.medium { background: #dcfce7; border-color: #bbf7d0; color: #047857; }
+    .evidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .evidence-option { min-height: 72px; border: 1px solid #dbeafe; border-radius: 14px; background: #ffffff; color: #123047; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 900; cursor: pointer; }
     .evidence-option.primary { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
-    .evidence-option i, .urgency-option i { font-size: 18px; }
+    .evidence-option i { font-size: 18px; }
     .file-drop { min-height: 72px; padding: 8px; border: 0; background: transparent; }
     .file-drop p { margin: 0; max-width: 100%; overflow-wrap: anywhere; font-size: 11px; }
     .location-card { border: 1px solid #dbeafe; border-radius: 14px; background: linear-gradient(180deg, #f8fbff, #eef8ff); padding: 12px; }
@@ -643,6 +640,15 @@
     .mini-action.secondary { background: #e0f2fe; color: #0369a1; }
     .bottom-tabs button { cursor: pointer; }
     /* End User bottom tabs v7 */
+
+    /* Reporter status polish v8 */
+    .reporter-status-panel { min-height: 356px; }
+    .reporter-status-panel h3 { font-size: 22px; line-height: 1.25; }
+    .reporter-status-panel .status-list { gap: 12px; }
+    .reporter-status-panel .status-item { border-color: #cfe4ff; border-radius: 16px; background: #f8fbff; padding: 16px; }
+    .reporter-status-panel .status-item strong { color: #0f2742; font-size: 15px; }
+    .reporter-status-panel .status-item span { color: #64748b; font-size: 14px; }
+    /* End Reporter status polish v8 */
   </style>
 </head>
 <body>
@@ -697,16 +703,7 @@
 
           <section class="card report-workflow">
             <div class="step-block">
-              <div class="step-label">1. Select urgency</div>
-              <div class="urgency-grid" aria-label="เลือกระดับความเร่งด่วน">
-                <button class="urgency-option critical" type="button"><i class="fa-solid fa-triangle-exclamation"></i>Critical</button>
-                <button class="urgency-option high" type="button"><i class="fa-solid fa-water"></i>High</button>
-                <button class="urgency-option medium" type="button"><i class="fa-solid fa-house-flood-water"></i>Medium</button>
-              </div>
-            </div>
-
-            <div class="step-block">
-              <div class="step-label">2. Upload evidence</div>
+              <div class="step-label">1. Upload evidence</div>
               <div class="evidence-grid">
                 <button class="evidence-option primary" type="button" onclick="document.getElementById('fileInput').click()">
                   <i class="fa-solid fa-camera"></i>
@@ -718,7 +715,7 @@
             </div>
 
             <div class="step-block">
-              <div class="step-label">3. Confirm location</div>
+              <div class="step-label">2. Confirm location</div>
               <div class="location-card">
                 <label for="locationInput">พิกัดของคุณ (GPS)</label>
                 <input type="text" id="locationInput" placeholder="กำลังดึงตำแหน่งพิกัด..." readonly />
@@ -727,7 +724,7 @@
             </div>
 
             <div class="step-block details-card">
-              <div class="step-label">4. Report details</div>
+              <div class="step-label">3. Report details</div>
               <label for="detailsInput">รายละเอียดเพิ่มเติม</label>
               <input type="text" id="detailsInput" placeholder="เช่น ถนนตัดขาด มีคนติดอยู่ในบ้าน หรือระดับน้ำเพิ่มเร็ว" />
             </div>
@@ -763,7 +760,7 @@
             </div>
           </section>
 
-          <section class="card menu-panel user-tab-view" data-user-view="status" hidden>
+          <section class="card menu-panel user-tab-view reporter-status-panel" data-user-view="status" hidden>
             <h3>สถานะระบบและรายงาน</h3>
             <div class="status-list">
               <article class="status-item"><strong>GPS</strong><span id="statusGpsText">กำลังซิงก์ตำแหน่ง...</span></article>
