@@ -688,7 +688,8 @@
 
 
     function numericDepth(yolo) {
-      const value = Number(yolo && yolo.depthCm);
+      if (!yolo || yolo.depthCm === null || yolo.depthCm === undefined || yolo.depthCm === '') return null;
+      const value = Number(yolo.depthCm);
       return Number.isFinite(value) ? value : null;
     }
 
@@ -698,6 +699,7 @@
     }
 
     function formatConfidence(value) {
+      if (value === null || value === undefined || value === '') return 'รอผล';
       const confidence = Number(value);
       return Number.isFinite(confidence) ? `${Math.round(confidence * 100)}%` : 'รอผล';
     }
@@ -810,7 +812,7 @@
           radius: 120
         }).addTo(map).bindPopup(`<b>ระดับน้ำ ${depth}</b><br>ประเมินโดย YOLO<br>สถานะ: ${risk}`).openPopup();
 
-        showSuccessModal('ส่งรายงานสำเร็จ', 'AI วัดระดับน้ำ ' + depth + ' สถานะ ' + riskLabel(risk) + ' ความมั่นใจ ' + confidence + ' และบันทึกลงฐานข้อมูลแล้ว');
+        showSuccessModal('ส่งรายงานสำเร็จ', (numericDepth(yolo) === null ? 'AI ยังวัดระดับน้ำไม่ได้จากภาพนี้' : 'AI วัดระดับน้ำ ' + depth) + ' สถานะ ' + riskLabel(risk) + ' ความมั่นใจ ' + confidence + ' และบันทึกลงฐานข้อมูลแล้ว');
         document.getElementById('submitStatus').className = 'submit-status';
         fileInput.value = '';
         handleFileName(fileInput);

@@ -28,3 +28,6 @@ my-flood-app/yolo*.pt
 # Local Cloudflare quick tunnel binary/logs
 .cloudflared/
 tools/cloudflared.exe
+my-flood-app/.cloudflared-yolo.*.log
+my-flood-app/.yolo-service.*.log
+.deploy-user/

@@ -232,11 +232,16 @@ def level_index_from_label(label: str) -> Optional[int]:
     return int(match.group(1)) if match else None
 
 
-def best_level_detection(detections: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def best_level_detection(detections: List[Dict[str, Any]], frame_area: Optional[float] = None) -> Optional[Dict[str, Any]]:
     level_detections = [item for item in detections if level_index_from_label(str(item.get("class_name", ""))) is not None]
     if not level_detections:
         return None
-    return max(level_detections, key=lambda item: float(item.get("confidence", 0.0)))
+    min_ratio = env_float("YOLO_LEVEL_MIN_AREA_RATIO", 0.01)
+    if frame_area and min_ratio > 0:
+        large = [item for item in level_detections if float(item.get("area", 0.0)) / frame_area >= min_ratio]
+        if large:
+            level_detections = large
+    return max(level_detections, key=lambda item: float(item.get("area", 0.0)) * max(0.001, float(item.get("confidence", 0.0))))
 
 
 def depth_from_level_detection(detection: Optional[Dict[str, Any]]) -> Optional[float]:
@@ -289,6 +294,8 @@ def health() -> Dict[str, Any]:
         "gaugeReferenceHeightCm": env_float("WATER_GAUGE_REFERENCE_HEIGHT_CM", DEFAULT_GAUGE_REFERENCE_HEIGHT_CM),
         "levelClassStepCm": env_float("WATER_LEVEL_CLASS_STEP_CM", DEFAULT_LEVEL_CLASS_STEP_CM),
         "levelClassBaseCm": env_float("WATER_LEVEL_CLASS_BASE_CM", DEFAULT_LEVEL_CLASS_BASE_CM),
+        "fallbackConf": env_float("YOLO_FALLBACK_CONF", 0.02),
+        "levelMinAreaRatio": env_float("YOLO_LEVEL_MIN_AREA_RATIO", 0.01),
     }
 
 
@@ -325,6 +332,15 @@ async def detect_water_level(
     results = model.predict(frame, conf=conf, imgsz=imgsz, classes=predict_classes, verbose=False)
     detections = detections_from_result(results[0], labels, classes) if results else []
     reference_detections = detections_from_result(results[0], ref_labels, ref_classes) if results else []
+    frame_area = float(width * height)
+    if best_level_detection(detections, frame_area) is None:
+        fallback_conf = env_float("YOLO_FALLBACK_CONF", 0.02)
+        if 0 < fallback_conf < conf:
+            fallback_results = model.predict(frame, conf=fallback_conf, imgsz=imgsz, classes=predict_classes, verbose=False)
+            fallback_detections = detections_from_result(fallback_results[0], labels, classes) if fallback_results else []
+            if best_level_detection(fallback_detections, frame_area) is not None:
+                detections = fallback_detections
+                reference_detections = detections_from_result(fallback_results[0], ref_labels, ref_classes) if fallback_results else []
     reference = best_detection(reference_detections)
     reference_source = "form" if reference_top_y is not None or reference_bottom_y is not None else "env"
     if reference is not None and reference_top_y is None and reference_bottom_y is None:
@@ -340,7 +356,7 @@ async def detect_water_level(
     elif not os.environ.get("WATER_REFERENCE_TOP_Y") and not os.environ.get("WATER_REFERENCE_BOTTOM_Y"):
         reference_source = "image_height"
     waterline_y, level_cm, level_percent, confidence = estimate_level(detections, top_y, bottom_y, height_cm)
-    level_detection = best_level_detection(detections)
+    level_detection = best_level_detection(detections, frame_area)
     level_class_depth_cm = depth_from_level_detection(level_detection)
     depth_source = "geometry"
     if level_class_depth_cm is not None:
