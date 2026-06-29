@@ -88,6 +88,12 @@ def env_int(name: str, fallback: int) -> int:
         return fallback
 
 
+def env_bool(name: str, fallback: bool = False) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return fallback
+    return raw in {"1", "true", "yes", "on"}
+
 def parse_csv(value: str) -> List[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
@@ -242,6 +248,15 @@ def depth_from_level_detection(detection: Optional[Dict[str, Any]]) -> Optional[
     return base_cm + (level_index * step_cm)
 
 
+def measurement_message(depth_source: str, level_cm: Optional[float], detections: List[Dict[str, Any]]) -> str:
+    if depth_source in {"geometry", "reference_geometry"}:
+        return "Water level measured against a calibrated reference in the image."
+    if depth_source == "level_class_estimate":
+        return "Water level estimated immediately from YOLO level class."
+    if detections:
+        return "Flood-water detected, but no calibrated reference was visible; depthCm is unavailable."
+    return "No flood-water detection found."
+
 def estimate_level(
     detections: List[Dict[str, Any]],
     top_y: float,
@@ -333,7 +348,7 @@ async def detect_water_level(
         level_percent = clamp((level_cm / max(1.0, height_cm)) * 100.0, 0.0, 100.0)
         confidence = max(confidence, float(level_detection.get("confidence", 0.0)) if level_detection is not None else 0.0)
         waterline_y = float(level_detection.get("waterline_y", waterline_y or 0.0)) if waterline_y is None and level_detection is not None else waterline_y
-        depth_source = "level_class"
+        depth_source = "level_class_estimate"
     elif level_cm is None:
         depth_source = "none"
     risk = risk_from_level(level_cm, alert_cm, critical_cm)
@@ -359,8 +374,10 @@ async def detect_water_level(
         "reference_source": reference_source,
         "reference_kind": reference_kind,
         "depth_source": depth_source,
+        "measurement_quality": "classified_estimate" if depth_source == "level_class_estimate" else ("measured" if depth_source == "geometry" else "unmeasured"),
+        "calibrated": depth_source == "geometry",
         "level_class": level_detection.get("class_name") if level_detection is not None else None,
-        "message": "Water level measured by Ultralytics YOLO." if level_cm is not None else "No flood-water detection found.",
+        "message": measurement_message(depth_source, level_cm, detections),
     }
 
 
